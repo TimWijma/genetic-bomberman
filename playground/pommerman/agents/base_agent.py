@@ -1,5 +1,7 @@
 '''This is the base abstraction for agents in pommerman.
 All agents should inherent from this class'''
+from pommerman import constants
+from genetic.common_types import Direction, PommermanBoard
 from .. import characters
 
 
@@ -33,3 +35,21 @@ class BaseAgent:
 
     def shutdown(self):
         pass
+    
+    def _check_direction_safety(self, obs: PommermanBoard, direction: Direction) -> bool:
+        # Check if the direction is safe
+        board = obs['board']
+        x, y = obs['position']
+        dx, dy = direction.value
+        new_x, new_y = x + dx, y + dy
+
+        # Check if the new position is within bounds
+        if new_x < 0 or new_x >= board.shape[0] or new_y < 0 or new_y >= board.shape[1]:
+            return False
+        
+        # Check if the new position is free
+        # TODO: Add support for powerups
+        if board[new_x, new_y] != constants.Item.Passage:
+            return False
+
+        return True
