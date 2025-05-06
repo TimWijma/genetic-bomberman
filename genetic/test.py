@@ -1,5 +1,6 @@
 from test_agent import TestAgent
 from game import Game
+from pommerman.agents import PlayerAgent
 
 def main():
     '''Simple function to bootstrap a game.'''
@@ -20,13 +21,14 @@ def main():
 
     game = Game([
         TestAgent(),
-        TestAgent(),
+        # TestAgent(),
+        PlayerAgent(),
     ], 
         tournament_name="PommeFFACompetition-v0",
         custom_map=custom_map,
     )
 
-    results = game.play_game(num_episodes=10)
+    results = game.play_game(num_episodes=1)
 
     print("Game Results:")
     for i, result in enumerate(results):
