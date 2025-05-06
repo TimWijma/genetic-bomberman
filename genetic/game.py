@@ -25,7 +25,8 @@ class Game:
         self.env._board = custom_map
 
     def play_game(self, num_episodes: int = 1, render_mode: str = None):
-        '''Simple function to bootstrap a game.'''
+        results = []
+
         for i_episode in range(num_episodes):
             state = self.env.reset()
 
@@ -33,14 +34,27 @@ class Game:
                 self._set_map(self.custom_map)
 
             done = False
+            step_count = 0
+            agent_steps = [0] * len(self.env._agents)
+
             while not done:
                 if render_mode is not None:
                     self.env.render(mode=render_mode)
                 actions = self.env.act(state)
                 state, reward, done, info = self.env.step(actions)
-            print('Episode {} finished'.format(i_episode))
 
-            if info.get('winners') is not None:
-                print('Winners: {}'.format(info['winners']))
+                step_count += 1
+
+                current_alive = set([i for i, agent in enumerate(self.env._agents) if agent.is_alive])
+                for i in current_alive:
+                    agent_steps[i] += 1
+
+            episode_results = {
+                'winners': info.get('winners'),
+                'survival_steps': agent_steps,
+                'total_steps': step_count,
+            }
+            results.append(episode_results)
 
         self.env.close()
+        return results

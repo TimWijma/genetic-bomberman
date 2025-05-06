@@ -1,5 +1,3 @@
-import pommerman
-from pommerman import agents
 from test_agent import TestAgent
 from game import Game
 
@@ -28,8 +26,14 @@ def main():
         custom_map=custom_map,
     )
 
-    game.play_game(num_episodes=1, render_mode='human')
-    # game.play_game(num_episodes=1)
+    results = game.play_game(num_episodes=10)
+
+    print("Game Results:")
+    for i, result in enumerate(results):
+        print(f"Episode {i + 1}:")
+        print(f"  Winners: {result['winners']}")
+        print(f"  Survival Steps: {result['survival_steps']}")
+        print(f"  Total Steps: {result['total_steps']}")
 
 if __name__ == '__main__':
     main()
