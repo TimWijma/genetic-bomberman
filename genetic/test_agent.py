@@ -1,8 +1,6 @@
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
 
-print(BaseAgent.__module__)
-
 class TestAgent(BaseAgent):
     """The Random Agent that returns random actions given an action_space."""
 
