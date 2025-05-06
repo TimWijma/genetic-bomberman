@@ -19,8 +19,8 @@ mccabe==0.7.0
 numpy==1.24.4
 Pillow==8.4.0
 platformdirs==4.3.6
-pommerman==0.2.0
-pyglet==1.4.0a1
+-e ./playground
+pyglet==1.5.11
 pylint==3.2.7
 python-cli-ui==0.7.5
 requests==2.32.3

@@ -1,7 +1,7 @@
 import pommerman
 from pommerman import agents
-from genetic.test_agent import TestAgent
-from genetic.game import Game
+from test_agent import TestAgent
+from game import Game
 
 def main():
     '''Simple function to bootstrap a game.'''
@@ -28,7 +28,7 @@ def main():
         custom_map=custom_map,
     )
 
-    game.play_game(num_episodes=1)
+    game.play_game(num_episodes=1, render_mode='human')
     # game.play_game(num_episodes=1)
 
 if __name__ == '__main__':

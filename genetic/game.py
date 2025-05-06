@@ -1,6 +1,6 @@
 import pommerman
 from pommerman import agents
-from genetic.test_agent import TestAgent
+from test_agent import TestAgent
 from typing import List
 import numpy as np
 
@@ -21,7 +21,6 @@ class Game:
     def _set_map(self, custom_map: List[List[int]]):
         custom_map = np.array(custom_map, dtype=np.uint8)
         assert custom_map.shape == (11, 11), "Custom map must be of shape (11, 11)"
-        assert np.all(np.isin(custom_map, [0, 1, 2])), "Custom map must contain only values 0, 1, 2, or 3"
         
         self.env._board = custom_map
 
