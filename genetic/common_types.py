@@ -57,3 +57,6 @@ class Rule:
         
     def __str__(self):
         return f"Rule(conditions={self.conditions}, operators={self.operators}, action={self.action})"
+
+    def __repr__(self):
+        return self.__str__()

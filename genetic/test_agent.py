@@ -74,8 +74,13 @@ class TestAgent(BaseAgent):
                     satisfied_rules.append(rule)
                     print(f"Satisfied rules: {satisfied_rules}")
                     continue
-        
+
         print(f"Satisfied rules: {satisfied_rules}")
+
+        if len(satisfied_rules) > 0:
+            rule = np.random.choice(satisfied_rules)
+            print(f"Chosen rule: {rule}")
+            return rule.action
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
         board = obs['board']
