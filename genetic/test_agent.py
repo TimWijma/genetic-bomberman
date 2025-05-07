@@ -5,7 +5,7 @@ from pommerman import characters, constants
 from genetic.common_types import Direction, OperatorType, PommermanBoard, Rule, ConditionType
 import numpy as np
 
-class TestAgent(BaseAgent):
+class GeneticAgent(BaseAgent):
     def __init__(self, rules: List[Rule], character=characters.Bomber):
         super().__init__(character)
 

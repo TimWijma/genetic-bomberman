@@ -1,6 +1,5 @@
 import pommerman
 from pommerman import agents
-from test_agent import TestAgent
 from typing import List
 import numpy as np
 

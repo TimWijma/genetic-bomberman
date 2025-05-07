@@ -1,9 +1,5 @@
-if __name__ == '__main__':
-    from genetic.test_agent import TestAgent
-    from genetic.common_types import Rule, ConditionType, OperatorType, ActionType
-else:
-    from .test_agent import TestAgent
-    from .common_types import Rule, ConditionType, OperatorType, ActionType
+from genetic.test_agent import GeneticAgent
+from genetic.common_types import Rule, ConditionType, OperatorType, ActionType
 from game import Game
 from pommerman.agents import PlayerAgent
 
@@ -63,9 +59,12 @@ def main():
     ]
 
     game = Game([
-        TestAgent(rules=rules),
-        # TestAgent(),
-        PlayerAgent(),
+        GeneticAgent(rules=rules),
+        GeneticAgent(rules=rules),
+        GeneticAgent(rules=rules),
+        GeneticAgent(rules=rules),
+        # GeneticAgent(),
+        # PlayerAgent(),
     ], 
         tournament_name="PommeFFACompetition-v0",
         custom_map=custom_map,
