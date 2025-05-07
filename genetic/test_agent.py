@@ -6,16 +6,20 @@ import numpy as np
 
 class TestAgent(BaseAgent):
     def act(self, obs: PommermanBoard, action_space: Discrete):
-        # return action_space.sample()
-
         agent_id = self._character.agent_id
         if agent_id == 0:
-            print({
-                'up': self._is_bomb_in_direction(obs, Direction.UP),
-                'down': self._is_bomb_in_direction(obs, Direction.DOWN),
-                'left': self._is_bomb_in_direction(obs, Direction.LEFT),
-                'right': self._is_bomb_in_direction(obs, Direction.RIGHT),
-                   })
+            print('\n'.join([
+                "--- Conditions ---",
+                f'is_bomb_in_range: {self._is_bomb_in_range(obs)}',
+                f'is_bomb_direction(UP): {self._is_bomb_in_direction(obs, Direction.UP)}',
+                f'is_bomb_direction(DOWN): {self._is_bomb_in_direction(obs, Direction.DOWN)}',
+                f'is_bomb_direction(LEFT): {self._is_bomb_in_direction(obs, Direction.LEFT)}',
+                f'is_bomb_direction(RIGHT): {self._is_bomb_in_direction(obs, Direction.RIGHT)}',
+                f'can_move(UP): {self._can_move(obs, Direction.UP)}',
+                f'can_move(DOWN): {self._can_move(obs, Direction.DOWN)}',
+                f'can_move(LEFT): {self._can_move(obs, Direction.LEFT)}',
+                f'can_move(RIGHT): {self._can_move(obs, Direction.RIGHT)}',
+                   ]))
             if obs['step_count'] in [0, 1, 2, 3]:
                 return 4
                 
@@ -24,26 +28,23 @@ class TestAgent(BaseAgent):
         return action_space.sample()
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
-        # Check if the direction is safe
         board = obs['board']
         y, x = obs['position']
         dx, dy = direction.value
         new_x, new_y = x + dx, y + dy
         
-        # Check if the new position is within bounds
-        if new_x < 0 or new_x >= board.shape[1] or new_y < 0 or new_y >= board.shape[0]:
+        if not self.position_in_bounds(obs, (new_y, new_x)):
             print("Out of bounds")
             return False
+        
+        target_value = board[new_y, new_x]
 
-        # Check if the new position is free
+        if target_value == constants.Item.Passage.value:
+            return True
+
         # TODO: Add support for powerups
-        if board[new_y, new_x] != constants.Item.Passage.value:
-            print(f"Not a passage, found {board[new_y, new_x]}")
-            return False
 
-        return True
-
-
+        return False
 
     # Check if the agent is in a tile that will be hit by a bomb
     def _is_bomb_in_range(self, obs: PommermanBoard):
@@ -81,8 +82,8 @@ class TestAgent(BaseAgent):
         dx, dy = direction.value
         new_x, new_y = x + dx, y + dy
         
-        # Check if the new position is within bounds
-        if new_x < 0 or new_x >= board.shape[1] or new_y < 0 or new_y >= board.shape[0]:
+        # # Check if the new position is within bounds
+        if not self.position_in_bounds(obs, (new_y, new_x)):
             return False
 
         blast_strength = obs['bomb_blast_strength']
@@ -114,3 +115,8 @@ class TestAgent(BaseAgent):
                         return True
                     
         return False
+    
+    def position_in_bounds(self, obs: PommermanBoard, position: tuple):
+        board = obs['board']
+        y, x = position
+        return 0 <= x < board.shape[1] and 0 <= y < board.shape[0]
