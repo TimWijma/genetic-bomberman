@@ -10,15 +10,23 @@ class TestAgent(BaseAgent):
 
         agent_id = self._character.agent_id
         if agent_id == 0:
-            print(self._is_bomb_in_range(obs))
+            print({
+                'up': self._is_bomb_in_direction(obs, Direction.UP),
+                'down': self._is_bomb_in_direction(obs, Direction.DOWN),
+                'left': self._is_bomb_in_direction(obs, Direction.LEFT),
+                'right': self._is_bomb_in_direction(obs, Direction.RIGHT),
+                   })
+            if obs['step_count'] in [0, 1, 2, 3]:
+                return 4
+                
             return 0
         
         return action_space.sample()
 
-    def _check_direction_safety(self, obs: PommermanBoard, direction: Direction) -> bool:
+    def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
         # Check if the direction is safe
         board = obs['board']
-        x, y = obs['position']
+        y, x = obs['position']
         dx, dy = direction.value
         new_x, new_y = x + dx, y + dy
         
@@ -35,10 +43,12 @@ class TestAgent(BaseAgent):
 
         return True
 
+
+
     # Check if the agent is in a tile that will be hit by a bomb
     def _is_bomb_in_range(self, obs: PommermanBoard):
         board = obs['board']
-        x, y = obs['position']
+        y, x = obs['position']
         blast_strength = obs['bomb_blast_strength']
         
         bomb_positions = np.where(blast_strength > 0)
@@ -63,4 +73,44 @@ class TestAgent(BaseAgent):
                         print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
                             
+        return False
+    
+    def _is_bomb_in_direction(self, obs: PommermanBoard, direction: Direction):
+        board = obs['board']
+        y, x = obs['position']
+        dx, dy = direction.value
+        new_x, new_y = x + dx, y + dy
+        
+        # Check if the new position is within bounds
+        if new_x < 0 or new_x >= board.shape[1] or new_y < 0 or new_y >= board.shape[0]:
+            return False
+
+        blast_strength = obs['bomb_blast_strength']
+        
+        bomb_positions = np.where(blast_strength > 0)
+        bomb_coords = list(zip(bomb_positions[1], bomb_positions[0]))
+
+        for bomb_x, bomb_y in bomb_coords:
+            bomb_strength = blast_strength[bomb_y, bomb_x]
+            if direction == Direction.UP and bomb_x == x and bomb_y < y:
+                if not any(board[i, x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(bomb_y + 1, y)):
+                    if (y - bomb_y < bomb_strength):
+                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        return True
+            elif direction == Direction.DOWN and bomb_x == x and bomb_y > y:
+                if not any(board[i, x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(y + 1, bomb_y)):
+                    if (bomb_y - y < bomb_strength):
+                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        return True
+            elif direction == Direction.LEFT and bomb_y == y and bomb_x < x:
+                if not any(board[y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(bomb_x + 1, x)):
+                    if (x - bomb_x < bomb_strength):
+                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        return True
+            elif direction == Direction.RIGHT and bomb_y == y and bomb_x > x:
+                if not any(board[y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(x + 1, bomb_x)):
+                    if (bomb_x - x < bomb_strength):
+                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        return True
+                    
         return False
