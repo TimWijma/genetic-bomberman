@@ -1,4 +1,4 @@
-from genetic.test_agent import GeneticAgent
+from genetic.agent import GeneticAgent
 from genetic.common_types import Rule, ConditionType, OperatorType, ActionType
 from game import Game
 from pommerman.agents import PlayerAgent
