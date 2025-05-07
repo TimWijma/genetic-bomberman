@@ -22,46 +22,54 @@ def main():
     #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     # ]
     
-    custom_map = [
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
-        [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 0 starting area
-        [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
-        [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
-        [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
-        [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],  # Middle row
-        [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
-        [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
-        [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
-        [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 3 starting area
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
-    ]
-    
     # custom_map = [
     #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
-    #     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 0 starting area
-    #     [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-    #     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    #     [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-    #     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Middle row
-    #     [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-    #     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    #     [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-    #     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 3 starting area
+    #     [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 0 starting area
+    #     [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
+    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
+    #     [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
+    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],  # Middle row
+    #     [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
+    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
+    #     [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
+    #     [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 3 starting area
     #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     # ]
     
-    # print cwd
-    print(os.getcwd())
-    print("------")
+    custom_map = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 0 starting area
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Middle row
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 3 starting area
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
+    ]
     
-    with open('./genetic/best_individual.pkl', 'rb') as f:
-        best_individual = pickle.load(f)
+    # # print cwd
+    # print(os.getcwd())
+    # print("------")
+    
+    # with open('./genetic/best_individual.pkl', 'rb') as f:
+    #     best_individual = pickle.load(f)
          
+    best_individual = [
+        Rule(
+            conditions=[ConditionType.IS_ENEMY_DOWN],
+            operators=[],
+            action=ActionType.MOVE_DOWN
+        )
+    ]
 
     game = Game([
         GeneticAgent(rules=best_individual),
         PlayerAgent(),
     ], 
+        # tournament_name="PommeFFACompetition-v0",
         tournament_name="PommeFFACompetition-v0",
         custom_map=custom_map,
     )
