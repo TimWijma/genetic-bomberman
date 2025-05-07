@@ -3,11 +3,13 @@ from pommerman import agents
 from typing import List
 import numpy as np
 
+from genetic.common_types import GameResult
+
 
 class Game:
     def __init__(
-            self, 
-            agent_list: List[agents.BaseAgent], 
+            self,
+            agent_list: List[agents.BaseAgent],
             tournament_name: str = "PommeFFACompetition-v0",
             custom_map: List[List[int]] = None,
         ):
@@ -16,6 +18,7 @@ class Game:
 
         if custom_map is not None:
             self._set_map(custom_map)
+            self.env._max_steps = 200
 
     def _set_map(self, custom_map: List[List[int]]):
         custom_map = np.array(custom_map, dtype=np.uint8)
@@ -23,7 +26,7 @@ class Game:
         
         self.env._board = custom_map
 
-    def play_game(self, num_episodes: int = 1, render_mode: str = None):
+    def play_game(self, num_episodes: int = 1, render_mode: str = None) -> List[GameResult]:
         results = []
 
         for i_episode in range(num_episodes):
@@ -49,7 +52,7 @@ class Game:
                     agent_steps[i] += 1
 
             episode_results = {
-                'winners': info.get('winners'),
+                'winners': info.get('winners') or [],
                 'survival_steps': agent_steps,
                 'total_steps': step_count,
             }

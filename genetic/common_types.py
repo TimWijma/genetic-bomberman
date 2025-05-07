@@ -19,6 +19,11 @@ class PommermanBoard(TypedDict, total=False):
     step_count: int # Current step in the episode
     alive: list # List of booleans indicating if each agent is alive
 
+class GameResult(TypedDict):
+    winners: List[int]
+    survival_steps: List[int]
+    total_steps: int
+
 class Direction(Enum):
     UP = (0, -1)
     RIGHT = (1, 0)
@@ -56,7 +61,11 @@ class Rule:
         self.action = action
         
     def __str__(self):
-        return f"Rule(conditions={self.conditions}, operators={self.operators}, action={self.action})"
+        conditions_str = " ".join(
+            f"{cond.name} {op.name}" if i < len(self.operators) else cond.name
+            for i, (cond, op) in enumerate(zip(self.conditions, self.operators + [None]))
+        )
+        return f"IF {conditions_str} THEN {self.action.name}"
 
     def __repr__(self):
         return self.__str__()

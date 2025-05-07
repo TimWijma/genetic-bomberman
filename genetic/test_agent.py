@@ -15,7 +15,7 @@ class GeneticAgent(BaseAgent):
         agent_id = self._character.agent_id
 
         action = self.evaluate(obs)
-        print(f"Agent {agent_id} action: {action}")
+        # print(f"Agent {agent_id} action: {action}")
         
         if action is None:
             return 0
@@ -72,14 +72,14 @@ class GeneticAgent(BaseAgent):
                     
                 if result:
                     satisfied_rules.append(rule)
-                    print(f"Satisfied rules: {satisfied_rules}")
+                    # print(f"Satisfied rules: {satisfied_rules}")
                     continue
 
-        print(f"Satisfied rules: {satisfied_rules}")
+        # print(f"Satisfied rules: {satisfied_rules}")
 
         if len(satisfied_rules) > 0:
             rule = np.random.choice(satisfied_rules)
-            print(f"Chosen rule: {rule}")
+            # print(f"Chosen rule: {rule}")
             return rule.action
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
@@ -89,7 +89,7 @@ class GeneticAgent(BaseAgent):
         new_x, new_y = x + dx, y + dy
         
         if not self.position_in_bounds(obs, (new_y, new_x)):
-            print("Out of bounds")
+            # print("Out of bounds")
             return False
         
         target_value = board[new_y, new_x]
@@ -120,13 +120,13 @@ class GeneticAgent(BaseAgent):
                 min_x, max_x = min(x, bomb_x), max(x, bomb_x)
                 if not any(board[bomb_y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_x + 1, max_x)):
                     if (abs(bomb_x - x) < bomb_strenght):
-                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
             elif bomb_x == x and bomb_y != y:
                 min_y, max_y = min(y, bomb_y), max(y, bomb_y)
                 if not any(board[i, bomb_x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_y + 1, max_y)):
                     if (abs(bomb_y - y) < bomb_strenght):
-                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
                             
         return False
@@ -151,22 +151,22 @@ class GeneticAgent(BaseAgent):
             if direction == Direction.UP and bomb_x == x and bomb_y < y:
                 if not any(board[i, x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(bomb_y + 1, y)):
                     if (y - bomb_y < bomb_strength):
-                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
             elif direction == Direction.DOWN and bomb_x == x and bomb_y > y:
                 if not any(board[i, x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(y + 1, bomb_y)):
                     if (bomb_y - y < bomb_strength):
-                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
             elif direction == Direction.LEFT and bomb_y == y and bomb_x < x:
                 if not any(board[y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(bomb_x + 1, x)):
                     if (x - bomb_x < bomb_strength):
-                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
             elif direction == Direction.RIGHT and bomb_y == y and bomb_x > x:
                 if not any(board[y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(x + 1, bomb_x)):
                     if (bomb_x - x < bomb_strength):
-                        print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
                     
         return False
