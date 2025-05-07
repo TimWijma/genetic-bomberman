@@ -2,23 +2,30 @@ from typing import List
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
 from pommerman import characters, constants
-from genetic.common_types import Direction, OperatorType, PommermanBoard, Rule, ConditionType
+from genetic.common_types import ActionType, Direction, OperatorType, PommermanBoard, Rule, ConditionType
 import numpy as np
 
 class GeneticAgent(BaseAgent):
-    def __init__(self, rules: List[Rule], character=characters.Bomber):
+    def __init__(self, rules: List[Rule], individual_index = -1, character=characters.Bomber):
         super().__init__(character)
 
         self.rules = rules
+        self.individual_index = individual_index
+        self.step_count = 0
+        self.visited_tiles = set()
+        self.bombs_placed = 0
     
     def act(self, obs: PommermanBoard, action_space: Discrete):
-        agent_id = self._character.agent_id
+        self.step_count += 1
+        self.visited_tiles.add(obs['position'])
 
         action = self.evaluate(obs)
-        # print(f"Agent {agent_id} action: {action}")
         
         if action is None:
             return 0
+
+        if action == ActionType.PLACE_BOMB and obs['ammo'] > 0:
+            self.bombs_placed += 1
         
         return action.value
 

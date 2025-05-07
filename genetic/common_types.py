@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, TypedDict
+from typing import Dict, List, TypedDict
 import numpy as np
 
 class PommermanBoard(TypedDict, total=False):
@@ -19,9 +19,15 @@ class PommermanBoard(TypedDict, total=False):
     step_count: int # Current step in the episode
     alive: list # List of booleans indicating if each agent is alive
 
+class AgentStats(TypedDict):
+    winner: bool
+    step_count: int
+    visited_tiles: set
+    bombs_placed: int
+    individual_index: int
+
 class GameResult(TypedDict):
-    winners: List[int]
-    survival_steps: List[int]
+    agents: List[AgentStats]
     total_steps: int
 
 class Direction(Enum):

@@ -15,6 +15,7 @@ class Game:
         ):
         self.env = pommerman.make(tournament_name, agent_list)
         self.custom_map = custom_map
+        self.agents = agent_list
 
         if custom_map is not None:
             self._set_map(custom_map)
@@ -36,8 +37,6 @@ class Game:
                 self._set_map(self.custom_map)
 
             done = False
-            step_count = 0
-            agent_steps = [0] * len(self.env._agents)
 
             while not done:
                 if render_mode is not None:
@@ -45,16 +44,17 @@ class Game:
                 actions = self.env.act(state)
                 state, reward, done, info = self.env.step(actions)
 
-                step_count += 1
-
-                current_alive = set([i for i, agent in enumerate(self.env._agents) if agent.is_alive])
-                for i in current_alive:
-                    agent_steps[i] += 1
+            winners = info.get('winners', [])
 
             episode_results = {
-                'winners': info.get('winners') or [],
-                'survival_steps': agent_steps,
-                'total_steps': step_count,
+                'agents': [{
+                    'winner': agent.agent_id in winners,
+                    'step_count': getattr(agent, 'step_count', 0),
+                    'visited_tiles': getattr(agent, 'visited_tiles', set()),
+                    'bombs_placed': getattr(agent, 'bombs_placed', 0),
+                    'individual_index': getattr(agent, 'individual_index', -1),
+                } for agent in self.agents],
+                'total_steps': self.env._step_count,
             }
             results.append(episode_results)
 
