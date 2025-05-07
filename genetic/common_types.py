@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TypedDict
+from typing import List, TypedDict
 import numpy as np
 
 class PommermanBoard(TypedDict, total=False):
@@ -24,3 +24,36 @@ class Direction(Enum):
     RIGHT = (1, 0)
     DOWN = (0, 1)
     LEFT = (-1, 0)
+
+
+class ConditionType(Enum):
+    IS_BOMB_IN_RANGE = 0,
+    IS_BOMB_UP = 1,
+    IS_BOMB_DOWN = 2,
+    IS_BOMB_LEFT = 3,
+    IS_BOMB_RIGHT = 4,
+    CAN_MOVE_UP = 5,
+    CAN_MOVE_DOWN = 6,
+    CAN_MOVE_LEFT = 7,
+    CAN_MOVE_RIGHT = 8,
+
+class OperatorType(Enum):
+    AND = 0,
+    OR = 1,
+    
+class ActionType(Enum):
+    DO_NOTHING = 0
+    MOVE_UP = 1
+    MOVE_DOWN = 2
+    MOVE_LEFT = 3
+    MOVE_RIGHT = 4
+    PLACE_BOMB = 5
+
+class Rule:
+    def __init__(self, conditions: List[ConditionType], operators: List[OperatorType], action: ActionType):
+        self.conditions = conditions
+        self.operators = operators
+        self.action = action
+        
+    def __str__(self):
+        return f"Rule(conditions={self.conditions}, operators={self.operators}, action={self.action})"

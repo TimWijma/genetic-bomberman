@@ -1,31 +1,81 @@
+from typing import List
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
-from pommerman import constants
-from genetic.common_types import Direction, PommermanBoard
+from pommerman import characters, constants
+from genetic.common_types import Direction, OperatorType, PommermanBoard, Rule, ConditionType
 import numpy as np
 
 class TestAgent(BaseAgent):
+    def __init__(self, rules: List[Rule], character=characters.Bomber):
+        super().__init__(character)
+
+        self.rules = rules
+    
     def act(self, obs: PommermanBoard, action_space: Discrete):
         agent_id = self._character.agent_id
-        if agent_id == 0:
-            print('\n'.join([
-                "--- Conditions ---",
-                f'is_bomb_in_range: {self._is_bomb_in_range(obs)}',
-                f'is_bomb_direction(UP): {self._is_bomb_in_direction(obs, Direction.UP)}',
-                f'is_bomb_direction(DOWN): {self._is_bomb_in_direction(obs, Direction.DOWN)}',
-                f'is_bomb_direction(LEFT): {self._is_bomb_in_direction(obs, Direction.LEFT)}',
-                f'is_bomb_direction(RIGHT): {self._is_bomb_in_direction(obs, Direction.RIGHT)}',
-                f'can_move(UP): {self._can_move(obs, Direction.UP)}',
-                f'can_move(DOWN): {self._can_move(obs, Direction.DOWN)}',
-                f'can_move(LEFT): {self._can_move(obs, Direction.LEFT)}',
-                f'can_move(RIGHT): {self._can_move(obs, Direction.RIGHT)}',
-                   ]))
-            if obs['step_count'] in [0, 1, 2, 3]:
-                return 4
-                
+
+        action = self.evaluate(obs)
+        print(f"Agent {agent_id} action: {action}")
+        
+        if action is None:
             return 0
         
+        return action.value
+        
         return action_space.sample()
+
+    def evaluate(self, obs: PommermanBoard):
+        conditions = {
+            ConditionType.IS_BOMB_IN_RANGE: self._is_bomb_in_range(obs),
+            ConditionType.IS_BOMB_UP: self._is_bomb_in_direction(obs, Direction.UP),
+            ConditionType.IS_BOMB_DOWN: self._is_bomb_in_direction(obs, Direction.DOWN),
+            ConditionType.IS_BOMB_LEFT: self._is_bomb_in_direction(obs, Direction.LEFT),
+            ConditionType.IS_BOMB_RIGHT: self._is_bomb_in_direction(obs, Direction.RIGHT),
+            ConditionType.CAN_MOVE_UP: self._can_move(obs, Direction.UP),
+            ConditionType.CAN_MOVE_DOWN: self._can_move(obs, Direction.DOWN),
+            ConditionType.CAN_MOVE_LEFT: self._can_move(obs, Direction.LEFT),
+            ConditionType.CAN_MOVE_RIGHT: self._can_move(obs, Direction.RIGHT),
+        }
+        
+        satisfied_rules = []
+
+        for rule in self.rules:
+            if len(rule.conditions) == 0:
+                continue
+            
+            # If there is 1 condition, check if it is satisfied 
+            if len(rule.conditions) == 1:
+                result = conditions.get(rule.conditions[0], False)
+                
+                if result:
+                    satisfied_rules.append(rule)
+                    
+                continue
+
+            # If there are multiple conditions, check if all of them are satisfied
+            if len(rule.conditions) > 1:
+                result = conditions.get(rule.conditions[0], False)
+                
+                for i in range(len(rule.operators)):
+                    # Break if there are no more conditions
+                    if i + 1 >= len(rule.conditions):
+                        break
+                    
+                    next_condition = conditions.get(rule.conditions[i + 1], False)
+                    operator = rule.operators[i]
+                    if operator == OperatorType.AND:
+                        result = result and next_condition
+                    elif operator == OperatorType.OR:
+                        result = result or next_condition
+                    else:
+                        raise ValueError(f"Unknown operator: {operator}")
+                    
+                if result:
+                    satisfied_rules.append(rule)
+                    print(f"Satisfied rules: {satisfied_rules}")
+                    continue
+        
+        print(f"Satisfied rules: {satisfied_rules}")
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
         board = obs['board']

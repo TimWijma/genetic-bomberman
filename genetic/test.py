@@ -1,7 +1,9 @@
 if __name__ == '__main__':
     from genetic.test_agent import TestAgent
+    from genetic.common_types import Rule, ConditionType, OperatorType, ActionType
 else:
     from .test_agent import TestAgent
+    from .common_types import Rule, ConditionType, OperatorType, ActionType
 from game import Game
 from pommerman.agents import PlayerAgent
 
@@ -36,9 +38,32 @@ def main():
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 3 starting area
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     ]
+    
+    rules = [
+        Rule(
+            conditions=[ConditionType.CAN_MOVE_LEFT],
+            operators=[],
+            action=ActionType.MOVE_LEFT,
+        ),
+        Rule(
+            conditions=[ConditionType.CAN_MOVE_RIGHT],
+            operators=[],
+            action=ActionType.MOVE_RIGHT,
+        ),
+        Rule(
+            conditions=[ConditionType.CAN_MOVE_UP],
+            operators=[],
+            action=ActionType.MOVE_UP,
+        ),
+        Rule(
+            conditions=[ConditionType.CAN_MOVE_DOWN],
+            operators=[],
+            action=ActionType.MOVE_DOWN,
+        ),
+    ]
 
     game = Game([
-        TestAgent(),
+        TestAgent(rules=rules),
         # TestAgent(),
         PlayerAgent(),
     ], 
