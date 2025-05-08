@@ -24,7 +24,11 @@ def main():
 
     game = Game([
         GeneticAgent(rules=best_individual),
-        PlayerAgent(),
+        GeneticAgent(rules=best_individual),
+        GeneticAgent(rules=best_individual),
+        GeneticAgent(rules=best_individual),
+        # GeneticAgent([]),
+        # PlayerAgent(),
     ], 
         tournament_name="PommeFFACompetition-v0",
         # custom_map=custom_map,
