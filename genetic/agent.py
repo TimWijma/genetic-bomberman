@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TypedDict
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
 from pommerman import characters, constants
@@ -10,22 +10,26 @@ class GeneticAgent(BaseAgent):
         super().__init__(character)
 
         self.rules = rules
-        self.individual_index = individual_index
+        self.individual_index = individual_index if individual_index != -1 else np.random.randint(0, 1000000)
         self.step_count = 0
         self.visited_tiles = set()
         self.bombs_placed = 0
+        self.bomb_tracker = {}
+        self.kills = []
     
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
         self.visited_tiles.add(obs['position'])
 
         action = self.evaluate(obs)
-        
+
         if action is None:
             return 0
 
         if action == ActionType.PLACE_BOMB and obs['ammo'] > 0:
             self.bombs_placed += 1
+            
+            self.bomb_tracker[tuple(obs['position'])] = self.step_count + 10 # Bomb explodes in 10 steps
         
         return action.value
 
@@ -45,14 +49,7 @@ class GeneticAgent(BaseAgent):
             ConditionType.HAS_BOMB: obs['ammo'] > 0,
             ConditionType.IS_ENEMY_IN_RANGE: self._is_enemy_in_range(obs),
         }
-        
-        # print({
-        #     'up': conditions[ConditionType.IS_ENEMY_UP],
-        #     'down': conditions[ConditionType.IS_ENEMY_DOWN],
-        #     'left': conditions[ConditionType.IS_ENEMY_LEFT],
-        #     'right': conditions[ConditionType.IS_ENEMY_RIGHT],
-        # })
-        
+                
         satisfied_rules = []
 
         for rule in self.rules:
@@ -88,14 +85,11 @@ class GeneticAgent(BaseAgent):
                     
                 if result:
                     satisfied_rules.append(rule)
-                    # print(f"Satisfied rules: {satisfied_rules}")
                     continue
 
-        # print(f"Satisfied rules: {satisfied_rules}")
 
         if len(satisfied_rules) > 0:
             rule = np.random.choice(satisfied_rules)
-            # print(f"Chosen rule: {rule}")
             return rule.action
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
@@ -105,7 +99,6 @@ class GeneticAgent(BaseAgent):
         new_x, new_y = x + dx, y + dy
         
         if not self.position_in_bounds(obs, (new_y, new_x)):
-            # print("Out of bounds")
             return False
         
         target_value = board[new_y, new_x]
@@ -130,7 +123,7 @@ class GeneticAgent(BaseAgent):
             if bomb_x == x and bomb_y == y:
                 return True
             
-            bomb_strenght = blast_strength[bomb_y, bomb_x]
+            bomb_strength = blast_strength[bomb_y, bomb_x]
             
             # Check if the bomb is in the same row or column as the player
             # Checks if there is a wall between the bomb and the player
@@ -138,13 +131,13 @@ class GeneticAgent(BaseAgent):
             if bomb_y == y and bomb_x != x:
                 min_x, max_x = min(x, bomb_x), max(x, bomb_x)
                 if not any(board[bomb_y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_x + 1, max_x)):
-                    if (abs(bomb_x - x) < bomb_strenght):
+                    if (abs(bomb_x - x) < bomb_strength):
                         # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
             elif bomb_x == x and bomb_y != y:
                 min_y, max_y = min(y, bomb_y), max(y, bomb_y)
                 if not any(board[i, bomb_x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_y + 1, max_y)):
-                    if (abs(bomb_y - y) < bomb_strenght):
+                    if (abs(bomb_y - y) < bomb_strength):
                         # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
                             

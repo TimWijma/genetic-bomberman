@@ -17,7 +17,7 @@ exceptiongroup==1.2.2
 executing==2.2.0
 Flask==0.12.5
 fonttools==4.57.0
--e git+https://git@github.com/TimWijma/bomberman-genetic.git@fcb18289fa46fa2c05bff74c9883007e53d44332#egg=genetic
+-e .
 gym==0.10.11
 idna==3.10
 ipykernel==6.29.5
@@ -42,7 +42,7 @@ parso==0.8.4
 pexpect==4.9.0
 Pillow==8.4.0
 platformdirs==4.3.6
--e git+https://git@github.com/TimWijma/bomberman-genetic.git@fcb18289fa46fa2c05bff74c9883007e53d44332#egg=pommerman&subdirectory=playground
+-e ./playground
 prompt_toolkit==3.0.51
 psutil==7.0.0
 ptyprocess==0.7.0

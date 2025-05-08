@@ -5,31 +5,31 @@ from pommerman.agents import PlayerAgent
 import pickle
 
 def main():
-    custom_map = [
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
-        [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 0 starting area
-        [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
-        [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
-        [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
-        [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],  # Middle row
-        [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
-        [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
-        [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
-        [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 3 starting area
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
-    ]
+    # custom_map = [
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
+    #     [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 0 starting area
+    #     [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
+    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
+    #     [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
+    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],  # Middle row
+    #     [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
+    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
+    #     [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
+    #     [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 3 starting area
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
+    # ]
     
-    with open('./genetic/generations/hof_135.pkl', 'rb') as f:
-        hof = pickle.load(f)
-        best_individual = hof[0]
+    with open('./genetic/best_individual.pkl', 'rb') as f:
+        best_individual = pickle.load(f)
 
     game = Game([
         GeneticAgent(rules=best_individual),
         PlayerAgent(),
     ], 
         tournament_name="PommeFFACompetition-v0",
-        custom_map=custom_map,
+        # custom_map=custom_map,
     )
+    print("Best Individual Rules:")
 
     results = game.play_game(num_episodes=1, render_mode='human')
 
@@ -42,6 +42,7 @@ def main():
             print(f"    Step Count: {agent['step_count']}")
             print(f"    Visited Tiles: {len(agent['visited_tiles'])}")
             print(f"    Bombs Placed: {agent['bombs_placed']}")
+            print(f"    Kills: {agent['kills']}")
         print(f"  Total Steps in Episode: {result['total_steps']}")
 
 if __name__ == '__main__':
