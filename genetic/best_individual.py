@@ -19,8 +19,9 @@ def main():
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     ]
     
-    with open('./genetic/best_individual.pkl', 'rb') as f:
-        best_individual = pickle.load(f)
+    with open('./genetic/generations/hof_135.pkl', 'rb') as f:
+        hof = pickle.load(f)
+        best_individual = hof[0]
 
     game = Game([
         GeneticAgent(rules=best_individual),
