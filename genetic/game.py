@@ -16,6 +16,8 @@ class Game:
         self.env = pommerman.make(tournament_name, agent_list)
         self.custom_map = custom_map
         self.agents = agent_list
+        self.active_bombs = {}
+        self.kills: Dict[int, List[int]] = {} # Key: agent_id, Value: list of killed agents' ids
 
         if custom_map is not None:
             self._set_map(custom_map)
@@ -44,12 +46,12 @@ class Game:
                 actions = self.env.act(state)
 
                 alive_last_step = [True if agent.is_alive else False for agent in self.agents]
-                positions_last_step = [agent.position for agent in self.agents]
-                active_bombs = self._get_active_bombs(state)
+                self._get_active_bombs(state)
+                print(f"Active bombs: {self.active_bombs}")
 
                 state, reward, done, info = self.env.step(actions)
                 
-                self._calculate_kills(alive_last_step, positions_last_step, active_bombs, state)
+                self._calculate_kills(alive_last_step, state)
 
             winners = info.get('winners', [])
 
@@ -62,7 +64,7 @@ class Game:
                     visited_tiles=len(getattr(agent, 'visited_tiles', set())),
                     bombs_placed=getattr(agent, 'bombs_placed', 0),
                     individual_index=getattr(agent, 'individual_index', -1),
-                    kills=getattr(agent, 'kills', []),
+                    kills=self.kills.get(agent.agent_id, []),
                 ) for agent in self.agents
             ]
 
@@ -77,38 +79,61 @@ class Game:
         return results
     
     def _get_active_bombs(self, state) -> Dict[tuple, int]:
-        active_bombs: Dict[tuple, int] = {}
+        board = state[0]['board']
+        bomb_map = state[0]['bomb_blast_strength']
+        bomb_positions = np.where(bomb_map > 0)
         
-        for i, agent in enumerate(self.agents):
-            if not agent.is_alive:
-                continue
+        bombs_to_remove = []
+        for bomb_pos in self.active_bombs.keys():
+            y, x = bomb_pos
             
-            agent_state: PommermanBoard = state[i]
-            bomb_map = agent_state['bomb_blast_strength']
-            bomb_positions = np.where(bomb_map > 0)
-            
-            for y, x in zip(bomb_positions[0], bomb_positions[1]):
-                bomb_pos = (y, x)
+            if board[y, x] not in [
+                constants.Item.Agent0.value,
+                constants.Item.Agent1.value,
+                constants.Item.Agent2.value,
+                constants.Item.Agent3.value,
+                constants.Item.Bomb.value,
+                constants.Item.Flames.value,
+            ]:
+                bombs_to_remove.append(bomb_pos)
                 
-                agent_bombs = getattr(agent, 'bomb_tracker', {})
-                if bomb_pos in agent_bombs:
-                    active_bombs[bomb_pos] = agent.agent_id
-                    
-        return active_bombs
+        for bomb_pos in bombs_to_remove:
+            del self.active_bombs[bomb_pos]
+                
+        for y, x in zip(bomb_positions[0], bomb_positions[1]):
+            bomb_pos = (y, x)
+
+            if bomb_pos not in self.active_bombs:
+                board_value = board[y, x]
+                
+                if board_value in [
+                    constants.Item.Agent0.value,
+                    constants.Item.Agent1.value,
+                    constants.Item.Agent2.value,
+                    constants.Item.Agent3.value,
+                ]:
+                    # Board value is 10, 11, 12, or 13
+                    # Subtract 10 to get the agent ID
+                    agent_id = board_value - 10
+                    self.active_bombs[bomb_pos] = agent_id
+                    print(f"Bomb placed by agent {agent_id} at {bomb_pos}")            
+
+        self.active_bombs = self.active_bombs
     
-    def _calculate_kills(self, alive_before_step, positions_before_step, active_bombs, state):
+    def _calculate_kills(self, alive_before_step, state):
         for i, agents in enumerate(self.agents):
             # Check if the agent died this step
             if alive_before_step[i] and not agents.is_alive:
-                death_pos = positions_before_step[i]
+                death_pos = state[i]['position']
                 
                 # Check which bomb was responsible for the death
-                for bomb_pos, owner_id in active_bombs.items():
+                for bomb_pos, owner_id in self.active_bombs.items():
+                    print(f"Checking bomb at {bomb_pos} placed by agent {owner_id}")
                     if self._is_in_blast_path(bomb_pos, death_pos, state[owner_id]['blast_strength'], state[owner_id]['board']):
-                        owner_agent = self.agents[owner_id]
-                        if hasattr(owner_agent, "kills"):
-                            owner_agent.kills.append(i)
-            
+                        # Get the current agent's kills and append the new kill
+                        agent_kills = self.kills.get(owner_id, [])
+                        self.kills[owner_id] = agent_kills + [i]
+
     def _is_in_blast_path(self, bomb_pos, agent_pos, blast_strength, board):
         by, bx = bomb_pos
         ay, ax = agent_pos

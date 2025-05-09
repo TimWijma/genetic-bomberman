@@ -30,32 +30,13 @@ class AgentResult:
         self.individual_index = individual_index
         self.kills = kills
         
-    def calculate_fitness(self):
-        fitness = 0
-        if self.winner:
-            fitness += 50
-
-        fitness += self.visited_tiles * 2
-        fitness += self.bombs_placed * 5
-        for kill in self.kills:
-            if kill == self.id:
-                fitness -= 10
-            else:
-                fitness += 20
-                
-        if self.visited_tiles < 10 and self.bombs_placed < 2:
-            fitness -= 10
-            
-        return fitness
-        
     def __str__(self):
         return (f"Agent {self.id} ({self.agent_type}):\n"
                 f"  Winner:         {self.winner}\n"
                 f"  Steps:          {self.step_count}\n"
                 f"  Visited Tiles:  {self.visited_tiles}\n"
                 f"  Bombs Placed:   {self.bombs_placed}\n"
-                f"  Kills:          {self.kills}\n"
-                f"  Fitness:       {self.calculate_fitness()}\n")
+                f"  Kills:          {self.kills}\n")
 
     def __repr__(self):
         return self.__str__()
