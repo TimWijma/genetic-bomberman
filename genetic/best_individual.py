@@ -19,18 +19,126 @@ def main():
     #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     # ]
     
-    with open('./genetic/best_individual.pkl', 'rb') as f:
-        best_individual = pickle.load(f)
+    # with open('./genetic//best_individual.pkl', 'rb') as f:
+    #     best_individual = pickle.load(f)
 
     game = Game([
-        # GeneticAgent(rules=best_individual),
-        GeneticAgent(rules=[
-            Rule(
-                conditions=[ConditionType.IS_ENEMY_IN_RANGE],
-                operators=[],
-                action=ActionType.PLACE_BOMB,
-                )
-            ]),
+GeneticAgent(rules=[
+    Rule(
+        conditions=[
+            ConditionType.HAS_BOMB,
+            ConditionType.CAN_MOVE_RIGHT
+        ],
+        operators=[
+            OperatorType.OR
+        ],
+        action=ActionType.MOVE_RIGHT
+    ),
+    Rule(
+        conditions=[
+            ConditionType.CAN_MOVE_DOWN,
+            ConditionType.CAN_MOVE_UP,
+            ConditionType.IS_BOMB_IN_RANGE
+        ],
+        operators=[
+            OperatorType.AND,
+            OperatorType.AND
+        ],
+        action=ActionType.MOVE_DOWN
+    ),
+    Rule(
+        conditions=[
+            ConditionType.CAN_MOVE_DOWN,
+            ConditionType.CAN_MOVE_UP,
+            ConditionType.IS_BOMB_RIGHT
+        ],
+        operators=[
+            OperatorType.AND,
+            OperatorType.OR
+        ],
+        action=ActionType.MOVE_LEFT
+    ),
+    Rule(
+        conditions=[
+            ConditionType.IS_TRAPPED,
+            ConditionType.IS_WOOD_IN_RANGE,
+            ConditionType.CAN_MOVE_DOWN
+        ],
+        operators=[
+            OperatorType.OR,
+            OperatorType.OR
+        ],
+        action=ActionType.MOVE_DOWN
+    ),
+    Rule(
+        conditions=[
+            ConditionType.IS_BOMB_DOWN,
+            ConditionType.CAN_MOVE_LEFT
+        ],
+        operators=[
+            OperatorType.AND
+        ],
+        action=ActionType.MOVE_UP
+    ),
+    Rule(
+        conditions=[
+            ConditionType.IS_ENEMY_IN_RANGE,
+            ConditionType.IS_ENEMY_IN_RANGE,
+            ConditionType.IS_WOOD_IN_RANGE
+        ],
+        operators=[
+            OperatorType.OR,
+            OperatorType.OR
+        ],
+        action=ActionType.PLACE_BOMB
+    ),
+    Rule(
+        conditions=[
+            ConditionType.HAS_BOMB,
+            ConditionType.CAN_MOVE_RIGHT
+        ],
+        operators=[
+            OperatorType.AND
+        ],
+        action=ActionType.MOVE_UP
+    ),
+    Rule(
+        conditions=[
+            ConditionType.IS_BOMB_IN_RANGE,
+            ConditionType.IS_BOMB_LEFT,
+            ConditionType.CAN_MOVE_LEFT
+        ],
+        operators=[
+            OperatorType.OR,
+            OperatorType.AND
+        ],
+        action=ActionType.MOVE_UP
+    ),
+    Rule(
+        conditions=[
+            ConditionType.IS_BOMB_LEFT,
+            ConditionType.CAN_MOVE_RIGHT,
+            ConditionType.IS_ENEMY_IN_RANGE
+        ],
+        operators=[
+            OperatorType.OR,
+            OperatorType.AND
+        ],
+        action=ActionType.MOVE_LEFT
+    ),
+    Rule(
+        conditions=[
+            ConditionType.IS_BOMB_IN_RANGE,
+            ConditionType.CAN_MOVE_DOWN,
+            ConditionType.IS_BOMB_DOWN
+        ],
+        operators=[
+            OperatorType.AND,
+            OperatorType.AND
+        ],
+        action=ActionType.MOVE_LEFT
+    )
+]),
         PlayerAgent(),
     ], 
         tournament_name="PommeFFACompetition-v0",
