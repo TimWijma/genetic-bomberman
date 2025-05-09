@@ -14,7 +14,6 @@ class GeneticAgent(BaseAgent):
         self.step_count = 0
         self.visited_tiles = set()
         self.bombs_placed = 0
-        self.bomb_tracker = {}
     
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
@@ -27,15 +26,7 @@ class GeneticAgent(BaseAgent):
 
         if action == ActionType.PLACE_BOMB and obs['ammo'] > 0:
             self.bombs_placed += 1
-            
-            self.bomb_tracker[tuple(obs['position'])] = {
-                'planted_step': self.step_count,
-                'expected_explosion': self.step_count + 10,  # Default life of 10 steps
-                'blast_strength': obs['blast_strength'],
-            }
 
-        self._update_bomb_tracker(obs)
-        
         return action.value
 
     def evaluate(self, obs: PommermanBoard):
@@ -259,10 +250,3 @@ class GeneticAgent(BaseAgent):
         board = obs['board']
         y, x = position
         return 0 <= x < board.shape[1] and 0 <= y < board.shape[0]
-    
-    def _update_bomb_tracker(self, obs: PommermanBoard):
-        current_step = obs['step_count']
-        
-        for pos, bomb in list(self.bomb_tracker.items()):
-            if bomb['expected_explosion'] < current_step:
-                del self.bomb_tracker[pos]
