@@ -20,11 +20,12 @@ class PommermanBoard(TypedDict, total=False):
     alive: list # List of booleans indicating if each agent is alive
 
 class AgentStats(TypedDict):
-    winner: bool
-    step_count: int
-    visited_tiles: set
-    bombs_placed: int
-    individual_index: int
+    winner: bool # Whether the agent won the game
+    step_count: int # Number of steps taken by the agent
+    visited_tiles: set # Set of tiles visited by the agent
+    bombs_placed: int # Number of bombs placed by the agent
+    individual_index: int # Index of the agent in the population
+    kills: list # List of agent IDs that this agent has killed
 
 class GameResult(TypedDict):
     agents: List[AgentStats]

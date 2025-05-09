@@ -20,6 +20,10 @@ class Game:
         if custom_map is not None:
             self._set_map(custom_map)
             self.env._max_steps = 200
+            
+        for agent in self.agents:
+            if not hasattr(agent, 'individual_index'):
+                agent.individual_index = np.random.randint(0, 1000000)
 
     def _set_map(self, custom_map: List[List[int]]):
         custom_map = np.array(custom_map, dtype=np.uint8)
@@ -46,16 +50,16 @@ class Game:
                 alive_last_step = [True if agent.is_alive else False for agent in self.agents]
                 positions_last_step = [agent.position for agent in self.agents]
                 active_bombs = self._get_active_bombs(state)
-                print(f"Alive agents: {alive_last_step}")
-                print(f"Positions last step: {positions_last_step}")
-                print(f"Active bombs: {active_bombs}")
-                print("------------")
+                # print(f"Alive agents: {alive_last_step}")
+                # print(f"Positions last step: {positions_last_step}")
+                # print(f"Active bombs: {active_bombs}")
+                # print("------------")
 
                 state, reward, done, info = self.env.step(actions)
                 
                 self._calculate_kills(alive_last_step, positions_last_step, active_bombs, state)
 
-                print([agent.is_alive for agent in self.agents])
+                # print([agent.is_alive for agent in self.agents])
 
             winners = info.get('winners', [])
 
@@ -99,15 +103,14 @@ class Game:
         for i, agents in enumerate(self.agents):
             if alive_before_step[i] and not agents.is_alive:
                 death_pos = positions_before_step[i]
-                print(f"Agent {i} killed at {death_pos} in step {self.env._step_count}")
+                # print(f"Agent {i} killed at {death_pos} in step {self.env._step_count}")
                 
                 for bomb_pos, owner_id in active_bombs.items():
                     if self._is_in_blast_path(bomb_pos, death_pos, state[owner_id]['blast_strength'], state[owner_id]['board']):
                         owner_agent = self.agents[owner_id]
                         if hasattr(owner_agent, "kills"):
-                            owner_agent.kills.append(i)
+                            owner_agent.kills.append(getattr(agents, 'individual_index', -1))
             
-    
     def _is_in_blast_path(self, bomb_pos, agent_pos, blast_strength, board):
         by, bx = bomb_pos
         ay, ax = agent_pos
