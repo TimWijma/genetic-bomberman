@@ -3,7 +3,7 @@ from pommerman import agents, constants
 from typing import List
 import numpy as np
 
-from genetic.common_types import GameResult, PommermanBoard
+from genetic.common_types import AgentResult, GameResult, PommermanBoard
 
 
 class Game:
@@ -32,7 +32,7 @@ class Game:
         self.env._board = custom_map
 
     def play_game(self, num_episodes: int = 1, render_mode: str = None) -> List[GameResult]:
-        results = []
+        results: List[GameResult] = []
 
         for i_episode in range(num_episodes):
             state = self.env.reset()
@@ -50,31 +50,31 @@ class Game:
                 alive_last_step = [True if agent.is_alive else False for agent in self.agents]
                 positions_last_step = [agent.position for agent in self.agents]
                 active_bombs = self._get_active_bombs(state)
-                # print(f"Alive agents: {alive_last_step}")
-                # print(f"Positions last step: {positions_last_step}")
-                # print(f"Active bombs: {active_bombs}")
-                # print("------------")
 
                 state, reward, done, info = self.env.step(actions)
                 
                 self._calculate_kills(alive_last_step, positions_last_step, active_bombs, state)
 
-                # print([agent.is_alive for agent in self.agents])
-
             winners = info.get('winners', [])
 
-            episode_results = {
-                'agents': [{
-                    'winner': agent.agent_id in winners,
-                    'step_count': getattr(agent, 'step_count', 0),
-                    'visited_tiles': getattr(agent, 'visited_tiles', set()),
-                    'bombs_placed': getattr(agent, 'bombs_placed', 0),
-                    'individual_index': getattr(agent, 'individual_index', -1),
-                    'kills': getattr(agent, 'kills', []),
-                } for agent in self.agents],
-                'total_steps': self.env._step_count,
-            }
-            results.append(episode_results)
+            agent_results = [
+                AgentResult(
+                    agent_type=type(agent).__name__,
+                    winner=agent.agent_id in winners,
+                    step_count=getattr(agent, 'step_count', 0),
+                    visited_tiles=len(getattr(agent, 'visited_tiles', set())),
+                    bombs_placed=getattr(agent, 'bombs_placed', 0),
+                    individual_index=getattr(agent, 'individual_index', -1),
+                    kills=getattr(agent, 'kills', []),
+                ) for agent in self.agents
+            ]
+
+            episode_result = GameResult(
+                agents=agent_results,
+                total_steps=self.env._step_count,
+            )
+            
+            results.append(episode_result)
 
         self.env.close()
         return results

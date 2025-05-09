@@ -19,17 +19,56 @@ class PommermanBoard(TypedDict, total=False):
     step_count: int # Current step in the episode
     alive: list # List of booleans indicating if each agent is alive
 
-class AgentStats(TypedDict):
-    winner: bool # Whether the agent won the game
-    step_count: int # Number of steps taken by the agent
-    visited_tiles: set # Set of tiles visited by the agent
-    bombs_placed: int # Number of bombs placed by the agent
-    individual_index: int # Index of the agent in the population
-    kills: list # List of agent IDs that this agent has killed
+class AgentResult:
+    def __init__(self, agent_type, winner: bool, step_count: int, visited_tiles: int, bombs_placed: int, individual_index: int, kills: list):
+        self.agent_type = agent_type
+        self.winner = winner
+        self.step_count = step_count
+        self.visited_tiles = visited_tiles
+        self.bombs_placed = bombs_placed
+        self.individual_index = individual_index
+        self.kills = kills
+        
+    def __str__(self):
+        return (f"Agent {self.individual_index} ({self.agent_type}):\n"
+                f"    Winner:         {self.winner}\n"
+                f"    Steps:          {self.step_count}\n"
+                f"    Visited Tiles:  {self.visited_tiles}\n"
+                f"    Bombs Placed:   {self.bombs_placed}\n"
+                f"    Kills:          {self.kills}\n")
 
-class GameResult(TypedDict):
-    agents: List[AgentStats]
-    total_steps: int
+    def __repr__(self):
+        return self.__str__()
+
+class GameResult:
+    def __init__(self, agents: List[AgentResult], total_steps: int):
+        self.agents = agents
+        self.total_steps = total_steps
+
+    def __str__(self):
+        result_str = f"Total Steps: {self.total_steps}\n"
+        for i, agent in enumerate(self.agents):
+            result_str += f"  {agent}"
+        return result_str
+
+    def __repr__(self):
+        return self.__str__()
+    
+    def to_json(self):
+        return {
+            "total_steps": self.total_steps,
+            "agents": [
+                {
+                    "winner": agent.winner,
+                    "step_count": agent.step_count,
+                    "visited_tiles": agent.visited_tiles,
+                    "bombs_placed": agent.bombs_placed,
+                    "individual_index": agent.individual_index,
+                    "kills": agent.kills,
+                }
+                for agent in self.agents
+            ],
+        }
 
 class Direction(Enum):
     UP = (0, -1)

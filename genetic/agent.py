@@ -10,7 +10,7 @@ class GeneticAgent(BaseAgent):
         super().__init__(character)
 
         self.rules = rules
-        self.individual_index = individual_index if individual_index != -1 else np.random.randint(0, 1000000)
+        self.individual_index = individual_index
         self.step_count = 0
         self.visited_tiles = set()
         self.bombs_placed = 0
