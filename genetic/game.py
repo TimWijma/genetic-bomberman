@@ -47,7 +47,6 @@ class Game:
 
                 alive_last_step = [True if agent.is_alive else False for agent in self.agents]
                 self._get_active_bombs(state)
-                print(f"Active bombs: {self.active_bombs}")
 
                 state, reward, done, info = self.env.step(actions)
                 
@@ -69,7 +68,7 @@ class Game:
             ]
 
             episode_result = GameResult(
-                agents=agent_results,
+                agent_results=agent_results,
                 total_steps=self.env._step_count,
             )
             
@@ -116,7 +115,6 @@ class Game:
                     # Subtract 10 to get the agent ID
                     agent_id = board_value - 10
                     self.active_bombs[bomb_pos] = agent_id
-                    print(f"Bomb placed by agent {agent_id} at {bomb_pos}")            
 
         self.active_bombs = self.active_bombs
     
@@ -128,7 +126,6 @@ class Game:
                 
                 # Check which bomb was responsible for the death
                 for bomb_pos, owner_id in self.active_bombs.items():
-                    print(f"Checking bomb at {bomb_pos} placed by agent {owner_id}")
                     if self._is_in_blast_path(bomb_pos, death_pos, state[owner_id]['blast_strength'], state[owner_id]['board']):
                         # Get the current agent's kills and append the new kill
                         agent_kills = self.kills.get(owner_id, [])

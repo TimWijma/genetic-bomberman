@@ -42,14 +42,14 @@ class AgentResult:
         return self.__str__()
 
 class GameResult:
-    def __init__(self, agents: List[AgentResult], total_steps: int):
-        self.agents = agents
+    def __init__(self, agent_results: List[AgentResult], total_steps: int):
+        self.agent_results = agent_results
         self.total_steps = total_steps
 
     def __str__(self):
         result_str = f"Total Steps: {self.total_steps}\n"
-        for i, agent in enumerate(self.agents):
-            result_str += f"{agent}"
+        for i, agent_result in enumerate(self.agent_results):
+            result_str += f"{agent_result}"
         return result_str
 
     def __repr__(self):
@@ -60,14 +60,14 @@ class GameResult:
             "total_steps": self.total_steps,
             "agents": [
                 {
-                    "winner": agent.winner,
-                    "step_count": agent.step_count,
-                    "visited_tiles": agent.visited_tiles,
-                    "bombs_placed": agent.bombs_placed,
-                    "individual_index": agent.individual_index,
-                    "kills": agent.kills,
+                    "winner": agent_result.winner,
+                    "step_count": agent_result.step_count,
+                    "visited_tiles": agent_result.visited_tiles,
+                    "bombs_placed": agent_result.bombs_placed,
+                    "individual_index": agent_result.individual_index,
+                    "kills": agent_result.kills,
                 }
-                for agent in self.agents
+                for agent_result in self.agent_results
             ],
         }
 

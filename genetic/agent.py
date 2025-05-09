@@ -15,7 +15,6 @@ class GeneticAgent(BaseAgent):
         self.visited_tiles = set()
         self.bombs_placed = 0
         self.bomb_tracker = {}
-        self.kills = []
     
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
