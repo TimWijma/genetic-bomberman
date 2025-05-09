@@ -20,7 +20,8 @@ class PommermanBoard(TypedDict, total=False):
     alive: list # List of booleans indicating if each agent is alive
 
 class AgentResult:
-    def __init__(self, agent_type, winner: bool, step_count: int, visited_tiles: int, bombs_placed: int, individual_index: int, kills: list):
+    def __init__(self, agent_id: int, agent_type, winner: bool, step_count: int, visited_tiles: int, bombs_placed: int, individual_index: int, kills: list):
+        self.id = agent_id
         self.agent_type = agent_type
         self.winner = winner
         self.step_count = step_count
@@ -29,13 +30,32 @@ class AgentResult:
         self.individual_index = individual_index
         self.kills = kills
         
+    def calculate_fitness(self):
+        fitness = 0
+        if self.winner:
+            fitness += 50
+
+        fitness += self.visited_tiles * 2
+        fitness += self.bombs_placed * 5
+        for kill in self.kills:
+            if kill == self.id:
+                fitness -= 10
+            else:
+                fitness += 20
+                
+        if self.visited_tiles < 10 and self.bombs_placed < 2:
+            fitness -= 10
+            
+        return fitness
+        
     def __str__(self):
-        return (f"Agent {self.individual_index} ({self.agent_type}):\n"
-                f"    Winner:         {self.winner}\n"
-                f"    Steps:          {self.step_count}\n"
-                f"    Visited Tiles:  {self.visited_tiles}\n"
-                f"    Bombs Placed:   {self.bombs_placed}\n"
-                f"    Kills:          {self.kills}\n")
+        return (f"Agent {self.id} ({self.agent_type}):\n"
+                f"  Winner:         {self.winner}\n"
+                f"  Steps:          {self.step_count}\n"
+                f"  Visited Tiles:  {self.visited_tiles}\n"
+                f"  Bombs Placed:   {self.bombs_placed}\n"
+                f"  Kills:          {self.kills}\n"
+                f"  Fitness:       {self.calculate_fitness()}\n")
 
     def __repr__(self):
         return self.__str__()
@@ -48,7 +68,7 @@ class GameResult:
     def __str__(self):
         result_str = f"Total Steps: {self.total_steps}\n"
         for i, agent in enumerate(self.agents):
-            result_str += f"  {agent}"
+            result_str += f"{agent}"
         return result_str
 
     def __repr__(self):

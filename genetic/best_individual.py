@@ -26,9 +26,9 @@ def main():
         # GeneticAgent(rules=best_individual),
         GeneticAgent(rules=[
             Rule(
-                conditions=[],
+                conditions=[ConditionType.IS_ENEMY_IN_RANGE],
                 operators=[],
-                action=ActionType.DO_NOTHING,
+                action=ActionType.PLACE_BOMB,
                 )
             ]),
         PlayerAgent(),

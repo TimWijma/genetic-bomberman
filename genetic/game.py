@@ -1,6 +1,6 @@
 import pommerman
 from pommerman import agents, constants
-from typing import List
+from typing import Dict, List
 import numpy as np
 
 from genetic.common_types import AgentResult, GameResult, PommermanBoard
@@ -20,10 +20,6 @@ class Game:
         if custom_map is not None:
             self._set_map(custom_map)
             self.env._max_steps = 200
-            
-        for agent in self.agents:
-            if not hasattr(agent, 'individual_index'):
-                agent.individual_index = np.random.randint(0, 1000000)
 
     def _set_map(self, custom_map: List[List[int]]):
         custom_map = np.array(custom_map, dtype=np.uint8)
@@ -59,6 +55,7 @@ class Game:
 
             agent_results = [
                 AgentResult(
+                    agent_id=agent.agent_id,
                     agent_type=type(agent).__name__,
                     winner=agent.agent_id in winners,
                     step_count=getattr(agent, 'step_count', 0),
@@ -79,8 +76,8 @@ class Game:
         self.env.close()
         return results
     
-    def _get_active_bombs(self, state):
-        active_bombs = {}
+    def _get_active_bombs(self, state) -> Dict[tuple, int]:
+        active_bombs: Dict[tuple, int] = {}
         
         for i, agent in enumerate(self.agents):
             if not agent.is_alive:
@@ -90,7 +87,7 @@ class Game:
             bomb_map = agent_state['bomb_blast_strength']
             bomb_positions = np.where(bomb_map > 0)
             
-            for x, y in zip(bomb_positions[1], bomb_positions[0]):
+            for y, x in zip(bomb_positions[0], bomb_positions[1]):
                 bomb_pos = (y, x)
                 
                 agent_bombs = getattr(agent, 'bomb_tracker', {})
@@ -101,15 +98,16 @@ class Game:
     
     def _calculate_kills(self, alive_before_step, positions_before_step, active_bombs, state):
         for i, agents in enumerate(self.agents):
+            # Check if the agent died this step
             if alive_before_step[i] and not agents.is_alive:
                 death_pos = positions_before_step[i]
-                # print(f"Agent {i} killed at {death_pos} in step {self.env._step_count}")
                 
+                # Check which bomb was responsible for the death
                 for bomb_pos, owner_id in active_bombs.items():
                     if self._is_in_blast_path(bomb_pos, death_pos, state[owner_id]['blast_strength'], state[owner_id]['board']):
                         owner_agent = self.agents[owner_id]
                         if hasattr(owner_agent, "kills"):
-                            owner_agent.kills.append(getattr(agents, 'individual_index', -1))
+                            owner_agent.kills.append(i)
             
     def _is_in_blast_path(self, bomb_pos, agent_pos, blast_strength, board):
         by, bx = bomb_pos

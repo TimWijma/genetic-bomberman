@@ -49,12 +49,6 @@ def main():
     print("Game Results:")
     for i, result in enumerate(results):
         print(f"Episode {i + 1}:")
-        for agent in result['agents']:
-            print(f"  Agent {agent['individual_index']}:")
-            print(f"    Winner: {'Yes' if agent['winner'] else 'No'}")
-            print(f"    Step Count: {agent['step_count']}")
-            print(f"    Visited Tiles: {len(agent['visited_tiles'])}")
-            print(f"    Bombs Placed: {agent['bombs_placed']}")
-        print(f"  Total Steps in Episode: {result['total_steps']}")
+        print(result)
 if __name__ == '__main__':
     main()
