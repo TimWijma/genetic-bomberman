@@ -1,6 +1,6 @@
 import pommerman
 from pommerman import agents, constants
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import numpy as np
 
 from genetic.common_types import AgentResult, GameResult, PommermanBoard
@@ -12,16 +12,19 @@ class Game:
             agent_list: List[agents.BaseAgent],
             tournament_name: str = "PommeFFACompetition-v0",
             custom_map: List[List[int]] = None,
+            max_steps: int = 200,
         ):
         self.env = pommerman.make(tournament_name, agent_list)
         self.custom_map = custom_map
         self.agents = agent_list
         self.active_bombs = {}
+        self.bomb_wood: Dict[Tuple[int, int], List[Tuple[int, int]]] = {}
         self.kills: Dict[int, List[int]] = {} # Key: agent_id, Value: list of killed agents' ids
+        self.wood_exploded: Dict[int, List[Tuple[int, int]]] = {} # Key: agent_id, Value: list of wood positions exploded by the agent
 
         if custom_map is not None:
             self._set_map(custom_map)
-            self.env._max_steps = 200
+            self.env._max_steps = max_steps
 
     def _set_map(self, custom_map: List[List[int]]):
         custom_map = np.array(custom_map, dtype=np.uint8)
@@ -47,10 +50,12 @@ class Game:
 
                 alive_last_step = [True if agent.is_alive else False for agent in self.agents]
                 self._get_active_bombs(state)
+                self._get_wood_positions(state)
 
                 state, reward, done, info = self.env.step(actions)
                 
                 self._calculate_kills(alive_last_step, state)
+                self._calculate_wood_exploded(state)
 
             winners = info.get('winners', [])
 
@@ -64,6 +69,7 @@ class Game:
                     bombs_placed=getattr(agent, 'bombs_placed', 0),
                     individual_index=getattr(agent, 'individual_index', -1),
                     kills=self.kills.get(agent.agent_id, []),
+                    wood_exploded=len(self.wood_exploded.get(agent.agent_id, [])),
                 ) for agent in self.agents
             ]
 
@@ -82,6 +88,8 @@ class Game:
         bomb_map = state[0]['bomb_blast_strength']
         bomb_positions = np.where(bomb_map > 0)
         
+        # Calculate bombs in active bombs that are no longer on the board
+        # and remove them from the active_bombs dictionary
         bombs_to_remove = []
         for bomb_pos in self.active_bombs.keys():
             y, x = bomb_pos
@@ -98,9 +106,10 @@ class Game:
                 
         for bomb_pos in bombs_to_remove:
             del self.active_bombs[bomb_pos]
-                
+
+        # Add new bombs to the active_bombs dictionary
         for y, x in zip(bomb_positions[0], bomb_positions[1]):
-            bomb_pos = (y, x)
+            bomb_pos:Tuple[int, int] = (y, x)
 
             if bomb_pos not in self.active_bombs:
                 board_value = board[y, x]
@@ -111,12 +120,61 @@ class Game:
                     constants.Item.Agent2.value,
                     constants.Item.Agent3.value,
                 ]:
-                    # Board value is 10, 11, 12, or 13
+                    # Board value of agents is 10, 11, 12, or 13
                     # Subtract 10 to get the agent ID
                     agent_id = board_value - 10
                     self.active_bombs[bomb_pos] = agent_id
 
         self.active_bombs = self.active_bombs
+    
+    def _get_wood_positions(self, state):
+        self.bomb_wood = {}
+
+        for bomb_pos, owner_id in self.active_bombs.items():
+            self._get_bomb_wood(state, bomb_pos)
+    
+    def _get_bomb_wood(self, state, bomb_pos: Tuple[int, int]):
+        board = state[0]['board']
+        y, x = bomb_pos
+        blast_strength = int(state[0]['bomb_blast_strength'][y, x])
+        wood_positions = []
+
+        # Check the four directions of the bomb
+        for dy, dx in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            for i in range(1, blast_strength):
+                new_y = y + dy * i
+                new_x = x + dx * i
+
+                if not self.position_in_bounds(state, (new_y, new_x)):
+                    break
+
+                # Check if the new position is a wood tile
+                # and add it to the wood_positions list
+                if board[new_y, new_x] == constants.Item.Wood.value:
+                    wood_positions.append((new_y, new_x))
+
+        # Store the wood positions in the bomb_wood dictionary
+        if bomb_pos not in self.bomb_wood:
+            self.bomb_wood[bomb_pos] = wood_positions
+        else:
+            self.bomb_wood[bomb_pos].extend(wood_positions)        
+    
+    def _calculate_wood_exploded(self, state):
+        for bomb_pos, owner_id in self.active_bombs.items():
+            # Check if the bomb exploded
+            if state[owner_id]['bomb_blast_strength'][bomb_pos] == 0:
+                # Get the wood positions that were destroyed by this bomb
+                wood_positions = self.bomb_wood.get(bomb_pos, [])
+                
+                for wood_pos in wood_positions:
+                    # Check if the wood position is still a wood tile
+                    if state[owner_id]['board'][wood_pos] == constants.Item.Wood.value:
+                        continue
+                    
+                    # If the wood position is not a wood tile, it was destroyed
+                    if owner_id not in self.wood_exploded:
+                        self.wood_exploded[owner_id] = []
+                    self.wood_exploded[owner_id].append(wood_pos)
     
     def _calculate_kills(self, alive_before_step, state):
         for i, agents in enumerate(self.agents):
@@ -154,3 +212,8 @@ class Game:
                     return False
             return True
         return False
+
+    def position_in_bounds(self, state, position: Tuple[int, int]) -> bool:
+        board = state[0]['board']
+        y, x = position
+        return 0 <= x < board.shape[1] and 0 <= y < board.shape[0]

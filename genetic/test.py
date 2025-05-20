@@ -14,25 +14,25 @@ def main():
         [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Middle row
-        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 2, 2, 2, 0, 0, 0, 1],  # Middle row
+        [1, 0, 1, 0, 1, 0, 1, 2, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 2, 0, 2, 0, 1],
         [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 3 starting area
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     ]
 
     rules = [
-        Rule(
-            conditions=[ConditionType.IS_WOOD_IN_RANGE],
-            operators=[],
-            action=ActionType.PLACE_BOMB
-        ),
-        Rule(
-            conditions=[ConditionType.IS_BOMB_IN_RANGE],
-            operators=[],
-            action=ActionType.MOVE_DOWN
-        )
+        # Rule(
+        #     conditions=[ConditionType.IS_WOOD_IN_RANGE],
+        #     operators=[],
+        #     action=ActionType.PLACE_BOMB
+        # ),
+        # Rule(
+        #     conditions=[ConditionType.IS_BOMB_IN_RANGE],
+        #     operators=[],
+        #     action=ActionType.MOVE_DOWN
+        # )
     ]
 
     game = Game([
@@ -42,6 +42,7 @@ def main():
         # tournament_name="PommeFFACompetition-v0",
         tournament_name="PommeFFACompetition-v0",
         custom_map=custom_map,
+        max_steps=800
     )
 
     results = game.play_game(num_episodes=1, render_mode='human')
