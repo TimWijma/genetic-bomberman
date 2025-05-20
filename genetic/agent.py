@@ -53,35 +53,26 @@ class GeneticAgent(BaseAgent):
 
     def process_board(self, obs: PommermanBoard) -> ProcessedBoard:
         board = obs['board']
-        rows, cols = board.shape
-
         board_blast_strength = obs['bomb_blast_strength']
+
+        enemies = np.array([enemy.value for enemy in obs['enemies']])
+        enemy_mask = np.isin(board, enemies)
+        enemy_positions = np.argwhere(enemy_mask)
         
-        enemies = [enemy.value for enemy in obs['enemies']]
-        enemy_positions = []
-        bomb_positions = set()
-        wood_positions = []
+        bomb_mask = (board_blast_strength > 0)
+        bomb_positions = np.argwhere(bomb_mask)
 
-        for y in range(rows):
-            for x in range(cols):
-                cell = board[y, x]
-                if cell in enemies:
-                    enemy_positions.append((y, x))
-                elif cell == constants.Item.Bomb.value:
-                    bomb_positions.add((y, x))
-                elif cell == constants.Item.Wood.value:
-                    wood_positions.append((y, x))
-                    
-        for y in range(rows):
-            for x in range(cols):
-                cell = board_blast_strength[y, x]
-                if cell > 0:
-                    bomb_positions.add((y, x))
-
+        wood_mask = (board == constants.Item.Wood.value)
+        wood_positions = np.argwhere(wood_mask)
+        
+        print(f"Enemies: {[tuple(pos) for pos in enemy_positions]}")
+        print(f"Bombs: {[tuple(pos) for pos in bomb_positions]}")
+        print(f"Wood: {[tuple(pos) for pos in wood_positions]}")
+        
         return {
-            'enemies': enemy_positions,
-            'bombs': bomb_positions,
-            'wood': wood_positions,
+            'enemies': [tuple(pos) for pos in enemy_positions],
+            'bombs': [tuple(pos) for pos in bomb_positions],
+            'wood': [tuple(pos) for pos in wood_positions],
         }
         
     def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard):

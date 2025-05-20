@@ -34,7 +34,7 @@ class Game:
 
     def play_game(self, num_episodes: int = 1, render_mode: str = None) -> List[GameResult]:
         results: List[GameResult] = []
-
+        
         for i_episode in range(num_episodes):
             state = self.env.reset()
 
@@ -101,8 +101,6 @@ class Game:
             for x in range(board.shape[1]):
                 if bomb_map[y, x] > 0:    
                     bomb_positions.append((y, x))
-        
-        print(f"Bomb positions: {bomb_positions}")
         
         # Calculate bombs in active bombs that are no longer on the board
         # and remove them from the active_bombs dictionary
