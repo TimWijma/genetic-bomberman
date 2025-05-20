@@ -109,6 +109,7 @@ class ConditionType(Enum):
     IS_TRAPPED = 10,
     HAS_BOMB = 11,
     IS_ENEMY_IN_RANGE = 12,
+    IS_BOMB_ON_PLAYER = 13,
 
 class OperatorType(Enum):
     AND = 0,

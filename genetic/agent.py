@@ -1,3 +1,4 @@
+import random
 from typing import List, Set, Tuple, TypedDict
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
@@ -7,8 +8,11 @@ import numpy as np
 
 class ProcessedBoard(TypedDict):
     enemies: List[Tuple[int, int]]
-    bombs: Set[Tuple[int, int]]
+    bombs: List[Tuple[int, int]]
     wood: List[Tuple[int, int]]
+    is_rigid: np.ndarray
+    is_wood: np.ndarray
+    is_obstacle: np.ndarray
 
 class GeneticAgent(BaseAgent):
     def __init__(self, rules: List[Rule], individual_index = -1, character=characters.Bomber):
@@ -55,24 +59,27 @@ class GeneticAgent(BaseAgent):
         board = obs['board']
         board_blast_strength = obs['bomb_blast_strength']
 
-        enemies = np.array([enemy.value for enemy in obs['enemies']])
-        enemy_mask = np.isin(board, enemies)
+        enemy_mask = np.zeros(board.shape, dtype=bool)
+        for enemy_object in obs['enemies']:
+            enemy_mask |= (board == enemy_object.value)
         enemy_positions = np.argwhere(enemy_mask)
         
         bomb_mask = (board_blast_strength > 0)
         bomb_positions = np.argwhere(bomb_mask)
 
-        wood_mask = (board == constants.Item.Wood.value)
-        wood_positions = np.argwhere(wood_mask)
-        
-        print(f"Enemies: {[tuple(pos) for pos in enemy_positions]}")
-        print(f"Bombs: {[tuple(pos) for pos in bomb_positions]}")
-        print(f"Wood: {[tuple(pos) for pos in wood_positions]}")
+        # wood_positions = np.argwhere(board == constants.Item.Wood.value)
+
+        is_rigid_mask = (board == constants.Item.Rigid.value)
+        is_wood_mask = (board == constants.Item.Wood.value)
+        is_obstacle = is_rigid_mask | is_wood_mask
         
         return {
             'enemies': [tuple(pos) for pos in enemy_positions],
             'bombs': [tuple(pos) for pos in bomb_positions],
-            'wood': [tuple(pos) for pos in wood_positions],
+            # 'wood': wood_positions,
+            'is_rigid': is_rigid_mask,
+            'is_wood': is_wood_mask,
+            'is_obstacle': is_obstacle,
         }
         
     def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard):
@@ -90,6 +97,7 @@ class GeneticAgent(BaseAgent):
             ConditionType.IS_TRAPPED: self._is_trapped(obs),
             ConditionType.HAS_BOMB: obs['ammo'] > 0,
             ConditionType.IS_ENEMY_IN_RANGE: self._is_enemy_in_range(obs, processed_board),
+            ConditionType.IS_BOMB_ON_PLAYER: self._is_bomb_on_player(obs),
         }
 
         satisfied_rules = []
@@ -129,26 +137,32 @@ class GeneticAgent(BaseAgent):
                     continue
 
         if len(satisfied_rules) > 0:
-            rule = np.random.choice(satisfied_rules)
+            rule = random.choice(satisfied_rules)
             return rule.action
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
         board = obs['board']
         y, x = obs['position']
         dx, dy = direction.value
-        new_x, new_y = x + dx, y + dy
+        new_y, new_x = y + dy, x + dx
         
-        if not self.position_in_bounds(obs, (new_y, new_x)):
-            return False
-        
-        target_value = board[new_y, new_x]
+        rows, cols = board.shape
 
-        if target_value == constants.Item.Passage.value:
+        if not (0 <= new_y < rows and 0 <= new_x < cols):
+            return False
+
+        if board[new_y, new_x] == constants.Item.Passage.value:
             return True
 
-        # TODO: Add support for powerups
+        # TODO: Add support for powerups.
 
-        return False
+        return False # Rigid, Wood, Bomb, Agent, etc.
+    
+    def _is_bomb_on_player(self, obs: PommermanBoard):
+        y, x = obs['position']
+        blast_strength = obs['bomb_blast_strength']
+        
+        return blast_strength[y, x] > 0
 
     # Check if the agent is in a tile that will be hit by a bomb
     def _is_bomb_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
@@ -164,18 +178,20 @@ class GeneticAgent(BaseAgent):
             
             bomb_strength = blast_strength[bomb_y, bomb_x]
             
+            obstacle_mask = (board == constants.Item.Wood.value) | (board == constants.Item.Rigid.value)
+            
             # Check if the bomb is in the same row or column as the player
             # Checks if there is a wall between the bomb and the player
             # Then checks if the bomb is strong enough to hit the player
             if bomb_y == y and bomb_x != x:
                 min_x, max_x = min(x, bomb_x), max(x, bomb_x)
-                if not any(board[bomb_y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_x + 1, max_x)):
+                if not np.any(obstacle_mask[bomb_y, min_x + 1:max_x]):
                     if (abs(bomb_x - x) < bomb_strength):
                         # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
             elif bomb_x == x and bomb_y != y:
                 min_y, max_y = min(y, bomb_y), max(y, bomb_y)
-                if not any(board[i, bomb_x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_y + 1, max_y)):
+                if not np.any(obstacle_mask[min_y + 1:max_y, bomb_x]):
                     if (abs(bomb_y - y) < bomb_strength):
                         # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
                         return True
@@ -183,103 +199,115 @@ class GeneticAgent(BaseAgent):
         return False
     
     def _is_bomb_in_direction(self, obs: PommermanBoard, processed_board: ProcessedBoard, direction: Direction):
-        board = obs['board']
         y, x = obs['position']
-        dx, dy = direction.value
-        new_x, new_y = x + dx, y + dy
         
-        # # Check if the new position is within bounds
-        if not self.position_in_bounds(obs, (new_y, new_x)):
-            return False
-
-        blast_strength = obs['bomb_blast_strength']
+        bomb_blast_strength_map = obs['bomb_blast_strength']
         bomb_coords = processed_board['bombs']
+        is_obstacle = processed_board['is_obstacle']
+
+        is_horizontal = (direction == Direction.LEFT or direction == Direction.RIGHT)
         
         for bomb_y, bomb_x in bomb_coords:
-            bomb_strength = blast_strength[bomb_y, bomb_x]
-            if direction == Direction.UP and bomb_x == x and bomb_y < y:
-                if not any(board[i, x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(bomb_y + 1, y)):
-                    if (y - bomb_y < bomb_strength):
-                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+            # Check if the bomb is in the same row or column as the player
+            if (is_horizontal and bomb_y != y) or (not is_horizontal and bomb_x != x):
+                continue
+            
+            # Check if the bomb is in the specified direction
+            if (direction == Direction.UP and bomb_y >= y) or \
+                (direction == Direction.DOWN and bomb_y <= y) or \
+                (direction == Direction.LEFT and bomb_x >= x) or \
+                (direction == Direction.RIGHT and bomb_x <= x):
+                continue    
+
+            bomb_strength = bomb_blast_strength_map[bomb_y, bomb_x]
+            if is_horizontal:
+                dist = abs(bomb_x - x)
+                if dist < bomb_strength:
+                    path_slice = is_obstacle[y, min(x, bomb_x) + 1 : max(x, bomb_x)]
+                    if not np.any(path_slice):
                         return True
-            elif direction == Direction.DOWN and bomb_x == x and bomb_y > y:
-                if not any(board[i, x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(y + 1, bomb_y)):
-                    if (bomb_y - y < bomb_strength):
-                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
+            else:
+                dist = abs(bomb_y - y)
+                if dist < bomb_strength:
+                    path_slice = is_obstacle[min(y, bomb_y) + 1 : max(y, bomb_y), x]
+                    if not np.any(path_slice):
                         return True
-            elif direction == Direction.LEFT and bomb_y == y and bomb_x < x:
-                if not any(board[y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(bomb_x + 1, x)):
-                    if (x - bomb_x < bomb_strength):
-                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
-                        return True
-            elif direction == Direction.RIGHT and bomb_y == y and bomb_x > x:
-                if not any(board[y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(x + 1, bomb_x)):
-                    if (bomb_x - x < bomb_strength):
-                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
-                        return True
-                    
         return False
-    
+
     def _is_wood_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
-        board = obs['board']
         y, x = obs['position']
-
         player_blast_strength = obs['blast_strength']
-        wood_coords = processed_board['wood']
+        board = obs['board']
+        is_rigid = processed_board['is_rigid']
+        rows, cols = board.shape
 
-        for wood_y, wood_x in wood_coords:
-            if wood_y == y and wood_x != x:
-                min_x, max_x = min(x, wood_x), max(x, wood_x)
-                if not any(board[wood_y, i] in [constants.Item.Rigid.value] for i in range(min_x + 1, max_x)):
-                    if (abs(wood_x - x) < player_blast_strength):
-                        return True
-            elif wood_x == x and wood_y != y:
-                min_y, max_y = min(y, wood_y), max(y, wood_y)
-                if not any(board[i, wood_x] in [constants.Item.Rigid.value] for i in range(min_y + 1, max_y)):
-                    if (abs(wood_y - y) < player_blast_strength):
-                        return True
-                            
+        directions = [
+            (0, 1),   # Right
+            (0, -1),  # Left
+            (1, 0),   # Down
+            (-1, 0)   # Up
+        ]
+
+        for dy, dx in directions:
+            for i in range(1, player_blast_strength + 1):
+                new_y = y + dy * i
+                new_x = x + dx * i
+
+                if not (0 <= new_y < rows and 0 <= new_x < cols):
+                    break
+                
+                if is_rigid[new_y, new_x]:
+                    break
+
+                # Check if the new position is a wood tile
+                if board[new_y, new_x] == constants.Item.Wood.value:
+                    return True
+
         return False
     
     def _is_trapped(self, obs: PommermanBoard):
         board = obs['board']
         y, x = obs['position']
         
-        for direction in Direction:
-            dx, dy = direction.value
-            new_x, new_y = x + dx, y + dy
+        rows, cols = board.shape
+        
+        directions_offsets = [
+            (0, 1),   # Right
+            (0, -1),  # Left
+            (1, 0),   # Down
+            (-1, 0)   # Up
+        ]
+        
+        for dy, dx in directions_offsets:
+            new_y, new_x = y + dy, x + dx
             
-            # Check if the new position is within bounds
-            if not self.position_in_bounds(obs, (new_y, new_x)):
-                continue
-
-            target_value = board[new_y, new_x]
-
-            if target_value == constants.Item.Passage.value:
-                return False
-            
+            if 0 <= new_y < rows and 0 <= new_x < cols:
+                if board[new_y, new_x] == constants.Item.Passage.value:
+                    return False
+        
         return True
     
     # Method that checks if there an an enemy within blast range in a given direction
     def _is_enemy_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
-        board = obs['board']
         y, x = obs['position']
 
         player_blast_strength = obs['blast_strength']
         enemy_coords = processed_board['enemies']
 
+        is_obstacle = processed_board['is_obstacle']
+
         for enemy_y, enemy_x in enemy_coords:
             if enemy_y == y and enemy_x != x:
                 min_x, max_x = min(x, enemy_x), max(x, enemy_x)
-                if not any(board[enemy_y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_x + 1, max_x)):
+                if not np.any(is_obstacle[enemy_y, min_x + 1:max_x]):
                     if (abs(enemy_x - x) < player_blast_strength):
                         return True
             elif enemy_x == x and enemy_y != y:
                 min_y, max_y = min(y, enemy_y), max(y, enemy_y)
-                if not any(board[i, enemy_x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_y + 1, max_y)):
+                if not np.any(is_obstacle[min_y + 1:max_y, enemy_x]):
                     if (abs(enemy_y - y) < player_blast_strength):
                         return True
-                            
+
         return False
     
     def position_in_bounds(self, obs: PommermanBoard, position: tuple):
