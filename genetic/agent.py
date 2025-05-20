@@ -14,10 +14,13 @@ class GeneticAgent(BaseAgent):
         self.step_count = 0
         self.visited_tiles = set()
         self.bombs_placed = 0
+        self.total_distance = 0
     
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
         self.visited_tiles.add(obs['position'])
+
+        self._distance_to_enemies(obs)
 
         action = self.evaluate(obs)
 
@@ -28,6 +31,18 @@ class GeneticAgent(BaseAgent):
             self.bombs_placed += 1
 
         return action.value
+
+    def reset_state(self):
+        self.step_count = 0
+        self.visited_tiles = set()
+        self.bombs_placed = 0
+        self.total_distance = 0
+        self.average_distance = 0
+
+    def episode_end(self, reward):
+        self.average_distance = self.total_distance / self.step_count if self.step_count > 0 else 0
+
+        return super().episode_end(reward)
 
     def evaluate(self, obs: PommermanBoard):
         conditions = {
@@ -250,3 +265,18 @@ class GeneticAgent(BaseAgent):
         board = obs['board']
         y, x = position
         return 0 <= x < board.shape[1] and 0 <= y < board.shape[0]
+
+    def manhattan_distance(self, pos1: tuple, pos2: tuple):
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+    def _distance_to_enemies(self, obs: PommermanBoard):
+        board = obs['board']
+        y, x = obs['position']
+
+        enemies = [enemy.value for enemy in obs['enemies']]
+        enemy_positions = np.where(np.isin(board, enemies))
+        enemy_coords = list(zip(enemy_positions[1], enemy_positions[0]))
+
+        distances = [self.manhattan_distance((x, y), (enemy_x, enemy_y)) for enemy_x, enemy_y in enemy_coords]
+        average_distance = np.mean(distances)
+        self.total_distance += average_distance

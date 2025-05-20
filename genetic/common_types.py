@@ -20,7 +20,19 @@ class PommermanBoard(TypedDict, total=False):
     alive: list # List of booleans indicating if each agent is alive
 
 class AgentResult:
-    def __init__(self, agent_id: int, agent_type, winner: bool, step_count: int, visited_tiles: int, bombs_placed: int, individual_index: int, kills: List[int], wood_exploded: int):
+    def __init__(
+        self, 
+        agent_id: int, 
+        agent_type, 
+        winner: bool, 
+        step_count: int, 
+        visited_tiles: int, 
+        bombs_placed: int, 
+        individual_index: int, 
+        kills: List[int], 
+        wood_exploded: int,
+        average_distance: float
+    ):
         self.id = agent_id
         self.agent_type = agent_type
         self.winner = winner
@@ -30,6 +42,7 @@ class AgentResult:
         self.individual_index = individual_index
         self.kills = kills
         self.wood_exploded = wood_exploded
+        self.average_distance = average_distance
         
     def __str__(self):
         return (f"Agent {self.id} ({self.agent_type}):\n"
@@ -38,7 +51,8 @@ class AgentResult:
                 f"  Visited Tiles:  {self.visited_tiles}\n"
                 f"  Bombs Placed:   {self.bombs_placed}\n"
                 f"  Kills:          {self.kills}\n"
-                f"  Wood Exploded:  {self.wood_exploded}\n")
+                f"  Wood Exploded:  {self.wood_exploded}\n"
+                f"  Average Distance: {self.average_distance}\n")
 
     def __repr__(self):
         return self.__str__()

@@ -41,6 +41,10 @@ class Game:
             if self.custom_map is not None:
                 self._set_map(self.custom_map)
 
+            for agent in self.agents:
+                if hasattr(agent, 'reset_state'):
+                    agent.reset_state()
+
             self.active_bombs = {}
             self.bomb_wood = {}
             self.kills = {}
@@ -75,6 +79,7 @@ class Game:
                     individual_index=getattr(agent, 'individual_index', -1),
                     kills=self.kills.get(agent.agent_id, []),
                     wood_exploded=len(self.wood_exploded.get(agent.agent_id, [])),
+                    average_distance=getattr(agent, 'average_distance', 0.0),
                 ) for agent in self.agents
             ]
 

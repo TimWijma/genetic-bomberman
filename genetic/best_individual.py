@@ -19,7 +19,7 @@ def main():
     #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     # ]
     
-    with open('./genetic/results/18004/best_individual.pkl', 'rb') as f:
+    with open('./genetic/results/70614/best_individual.pkl', 'rb') as f:
         best_individual = pickle.load(f)
 
     game = Game([

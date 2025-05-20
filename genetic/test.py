@@ -36,6 +36,8 @@ def main():
     ]
 
     game = Game([
+        # GeneticAgent(rules),
+        # GeneticAgent(rules),
         GeneticAgent(rules),
         PlayerAgent(),
     ], 
@@ -45,7 +47,7 @@ def main():
         max_steps=800
     )
 
-    results = game.play_game(num_episodes=1, render_mode='human')
+    results = game.play_game(num_episodes=2, render_mode='human')
 
     print("Game Results:")
     for i, result in enumerate(results):
