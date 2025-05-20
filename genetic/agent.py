@@ -1,9 +1,14 @@
-from typing import List, TypedDict
+from typing import List, Set, Tuple, TypedDict
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
 from pommerman import characters, constants
 from genetic.common_types import ActionType, Direction, OperatorType, PommermanBoard, Rule, ConditionType
 import numpy as np
+
+class ProcessedBoard(TypedDict):
+    enemies: List[Tuple[int, int]]
+    bombs: Set[Tuple[int, int]]
+    wood: List[Tuple[int, int]]
 
 class GeneticAgent(BaseAgent):
     def __init__(self, rules: List[Rule], individual_index = -1, character=characters.Bomber):
@@ -20,9 +25,11 @@ class GeneticAgent(BaseAgent):
         self.step_count += 1
         self.visited_tiles.add(obs['position'])
 
-        self._distance_to_enemies(obs)
+        processed_board = self.process_board(obs)
 
-        action = self.evaluate(obs)
+        self._distance_to_enemies(obs, processed_board)
+
+        action = self.evaluate(obs, processed_board)
 
         if action is None:
             return 0
@@ -44,25 +51,57 @@ class GeneticAgent(BaseAgent):
 
         return super().episode_end(reward)
 
-    def evaluate(self, obs: PommermanBoard):
+    def process_board(self, obs: PommermanBoard) -> ProcessedBoard:
+        board = obs['board']
+        rows, cols = board.shape
+
+        board_blast_strength = obs['bomb_blast_strength']
+        
+        enemies = [enemy.value for enemy in obs['enemies']]
+        enemy_positions = []
+        bomb_positions = set()
+        wood_positions = []
+
+        for y in range(rows):
+            for x in range(cols):
+                cell = board[y, x]
+                if cell in enemies:
+                    enemy_positions.append((y, x))
+                elif cell == constants.Item.Bomb.value:
+                    bomb_positions.add((y, x))
+                elif cell == constants.Item.Wood.value:
+                    wood_positions.append((y, x))
+                    
+        for y in range(rows):
+            for x in range(cols):
+                cell = board_blast_strength[y, x]
+                if cell > 0:
+                    bomb_positions.add((y, x))
+
+        return {
+            'enemies': enemy_positions,
+            'bombs': bomb_positions,
+            'wood': wood_positions,
+        }
+        
+    def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard):
         conditions = {
-            ConditionType.IS_BOMB_IN_RANGE: self._is_bomb_in_range(obs),
-            ConditionType.IS_BOMB_UP: self._is_bomb_in_direction(obs, Direction.UP),
-            ConditionType.IS_BOMB_DOWN: self._is_bomb_in_direction(obs, Direction.DOWN),
-            ConditionType.IS_BOMB_LEFT: self._is_bomb_in_direction(obs, Direction.LEFT),
-            ConditionType.IS_BOMB_RIGHT: self._is_bomb_in_direction(obs, Direction.RIGHT),
-            ConditionType.IS_WOOD_IN_RANGE: self._is_wood_in_range(obs),
+            ConditionType.IS_BOMB_IN_RANGE: self._is_bomb_in_range(obs, processed_board),
+            ConditionType.IS_BOMB_UP: self._is_bomb_in_direction(obs, processed_board, Direction.UP),
+            ConditionType.IS_BOMB_DOWN: self._is_bomb_in_direction(obs, processed_board, Direction.DOWN),
+            ConditionType.IS_BOMB_LEFT: self._is_bomb_in_direction(obs, processed_board, Direction.LEFT),
+            ConditionType.IS_BOMB_RIGHT: self._is_bomb_in_direction(obs, processed_board, Direction.RIGHT),
+            ConditionType.IS_WOOD_IN_RANGE: self._is_wood_in_range(obs, processed_board),
             ConditionType.CAN_MOVE_UP: self._can_move(obs, Direction.UP),
             ConditionType.CAN_MOVE_DOWN: self._can_move(obs, Direction.DOWN),
             ConditionType.CAN_MOVE_LEFT: self._can_move(obs, Direction.LEFT),
             ConditionType.CAN_MOVE_RIGHT: self._can_move(obs, Direction.RIGHT),
             ConditionType.IS_TRAPPED: self._is_trapped(obs),
             ConditionType.HAS_BOMB: obs['ammo'] > 0,
-            ConditionType.IS_ENEMY_IN_RANGE: self._is_enemy_in_range(obs),
+            ConditionType.IS_ENEMY_IN_RANGE: self._is_enemy_in_range(obs, processed_board),
         }
-                
-        satisfied_rules = []
 
+        satisfied_rules = []
         for rule in self.rules:
             if len(rule.conditions) == 0:
                 continue
@@ -73,7 +112,7 @@ class GeneticAgent(BaseAgent):
                 
                 if result:
                     satisfied_rules.append(rule)
-                    
+
                 continue
 
             # If there are multiple conditions, check if all of them are satisfied
@@ -98,7 +137,6 @@ class GeneticAgent(BaseAgent):
                     satisfied_rules.append(rule)
                     continue
 
-
         if len(satisfied_rules) > 0:
             rule = np.random.choice(satisfied_rules)
             return rule.action
@@ -122,16 +160,15 @@ class GeneticAgent(BaseAgent):
         return False
 
     # Check if the agent is in a tile that will be hit by a bomb
-    def _is_bomb_in_range(self, obs: PommermanBoard):
+    def _is_bomb_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
         board = obs['board']
         y, x = obs['position']
         blast_strength = obs['bomb_blast_strength']
         
-        bomb_positions = np.where(blast_strength > 0)
-        bomb_coords = list(zip(bomb_positions[1], bomb_positions[0]))
+        bomb_coords = processed_board['bombs']
 
-        for bomb_x, bomb_y in bomb_coords:
-            if bomb_x == x and bomb_y == y:
+        for bomb_y, bomb_x in bomb_coords:
+            if bomb_y == y and bomb_x == x:
                 return True
             
             bomb_strength = blast_strength[bomb_y, bomb_x]
@@ -154,7 +191,7 @@ class GeneticAgent(BaseAgent):
                             
         return False
     
-    def _is_bomb_in_direction(self, obs: PommermanBoard, direction: Direction):
+    def _is_bomb_in_direction(self, obs: PommermanBoard, processed_board: ProcessedBoard, direction: Direction):
         board = obs['board']
         y, x = obs['position']
         dx, dy = direction.value
@@ -165,11 +202,9 @@ class GeneticAgent(BaseAgent):
             return False
 
         blast_strength = obs['bomb_blast_strength']
+        bomb_coords = processed_board['bombs']
         
-        bomb_positions = np.where(blast_strength > 0)
-        bomb_coords = list(zip(bomb_positions[1], bomb_positions[0]))
-
-        for bomb_x, bomb_y in bomb_coords:
+        for bomb_y, bomb_x in bomb_coords:
             bomb_strength = blast_strength[bomb_y, bomb_x]
             if direction == Direction.UP and bomb_x == x and bomb_y < y:
                 if not any(board[i, x] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(bomb_y + 1, y)):
@@ -194,16 +229,14 @@ class GeneticAgent(BaseAgent):
                     
         return False
     
-    def _is_wood_in_range(self, obs: PommermanBoard):
+    def _is_wood_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
         board = obs['board']
         y, x = obs['position']
 
         player_blast_strength = obs['blast_strength']
+        wood_coords = processed_board['wood']
 
-        wood_positions = np.where(board == constants.Item.Wood.value)
-        wood_coords = list(zip(wood_positions[1], wood_positions[0]))
-
-        for wood_x, wood_y in wood_coords:
+        for wood_y, wood_x in wood_coords:
             if wood_y == y and wood_x != x:
                 min_x, max_x = min(x, wood_x), max(x, wood_x)
                 if not any(board[wood_y, i] in [constants.Item.Rigid.value] for i in range(min_x + 1, max_x)):
@@ -237,17 +270,14 @@ class GeneticAgent(BaseAgent):
         return True
     
     # Method that checks if there an an enemy within blast range in a given direction
-    def _is_enemy_in_range(self, obs: PommermanBoard):
+    def _is_enemy_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
         board = obs['board']
         y, x = obs['position']
 
         player_blast_strength = obs['blast_strength']
+        enemy_coords = processed_board['enemies']
 
-        enemies = [enemy.value for enemy in obs['enemies']]
-        enemy_positions = np.where(np.isin(board, enemies))
-        enemy_coords = list(zip(enemy_positions[1], enemy_positions[0]))
-
-        for enemy_x, enemy_y in enemy_coords:
+        for enemy_y, enemy_x in enemy_coords:
             if enemy_y == y and enemy_x != x:
                 min_x, max_x = min(x, enemy_x), max(x, enemy_x)
                 if not any(board[enemy_y, i] in [constants.Item.Wood.value, constants.Item.Rigid.value] for i in range(min_x + 1, max_x)):
@@ -269,14 +299,10 @@ class GeneticAgent(BaseAgent):
     def manhattan_distance(self, pos1: tuple, pos2: tuple):
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
-    def _distance_to_enemies(self, obs: PommermanBoard):
-        board = obs['board']
+    def _distance_to_enemies(self, obs: PommermanBoard, processed_board: ProcessedBoard):
         y, x = obs['position']
+        enemy_coords = processed_board['enemies']
 
-        enemies = [enemy.value for enemy in obs['enemies']]
-        enemy_positions = np.where(np.isin(board, enemies))
-        enemy_coords = list(zip(enemy_positions[1], enemy_positions[0]))
-
-        distances = [self.manhattan_distance((x, y), (enemy_x, enemy_y)) for enemy_x, enemy_y in enemy_coords]
+        distances = [self.manhattan_distance((y, x), (enemy_y, enemy_x)) for enemy_y, enemy_x in enemy_coords]
         average_distance = np.mean(distances)
         self.total_distance += average_distance

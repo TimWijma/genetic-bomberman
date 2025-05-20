@@ -96,7 +96,13 @@ class Game:
     def _get_active_bombs(self, state) -> Dict[tuple, int]:
         board = state[0]['board']
         bomb_map = state[0]['bomb_blast_strength']
-        bomb_positions = np.where(bomb_map > 0)
+        bomb_positions = []
+        for y in range(board.shape[0]):
+            for x in range(board.shape[1]):
+                if bomb_map[y, x] > 0:    
+                    bomb_positions.append((y, x))
+        
+        print(f"Bomb positions: {bomb_positions}")
         
         # Calculate bombs in active bombs that are no longer on the board
         # and remove them from the active_bombs dictionary
@@ -118,8 +124,8 @@ class Game:
             del self.active_bombs[bomb_pos]
 
         # Add new bombs to the active_bombs dictionary
-        for y, x in zip(bomb_positions[0], bomb_positions[1]):
-            bomb_pos:Tuple[int, int] = (y, x)
+        for bomb_pos in bomb_positions:
+            y, x = bomb_pos
 
             if bomb_pos not in self.active_bombs:
                 board_value = board[y, x]
