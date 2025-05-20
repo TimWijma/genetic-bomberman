@@ -83,12 +83,23 @@ class GeneticAgent(BaseAgent):
         }
         
     def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard):
-        conditions = {
-            ConditionType.IS_BOMB_IN_RANGE: self._is_bomb_in_range(obs, processed_board),
+        bomb_conditions = {
             ConditionType.IS_BOMB_UP: self._is_bomb_in_direction(obs, processed_board, Direction.UP),
             ConditionType.IS_BOMB_DOWN: self._is_bomb_in_direction(obs, processed_board, Direction.DOWN),
             ConditionType.IS_BOMB_LEFT: self._is_bomb_in_direction(obs, processed_board, Direction.LEFT),
             ConditionType.IS_BOMB_RIGHT: self._is_bomb_in_direction(obs, processed_board, Direction.RIGHT),
+        }
+        is_bomb_in_range = bomb_conditions[ConditionType.IS_BOMB_DOWN] or \
+            bomb_conditions[ConditionType.IS_BOMB_UP] or \
+            bomb_conditions[ConditionType.IS_BOMB_LEFT] or \
+            bomb_conditions[ConditionType.IS_BOMB_RIGHT]
+
+        conditions = {
+            ConditionType.IS_BOMB_IN_RANGE: is_bomb_in_range,
+            ConditionType.IS_BOMB_UP: bomb_conditions[ConditionType.IS_BOMB_UP],
+            ConditionType.IS_BOMB_DOWN: bomb_conditions[ConditionType.IS_BOMB_DOWN],
+            ConditionType.IS_BOMB_LEFT: bomb_conditions[ConditionType.IS_BOMB_LEFT],
+            ConditionType.IS_BOMB_RIGHT: bomb_conditions[ConditionType.IS_BOMB_RIGHT],
             ConditionType.IS_WOOD_IN_RANGE: self._is_wood_in_range(obs, processed_board),
             ConditionType.CAN_MOVE_UP: self._can_move(obs, Direction.UP),
             ConditionType.CAN_MOVE_DOWN: self._can_move(obs, Direction.DOWN),
@@ -163,40 +174,6 @@ class GeneticAgent(BaseAgent):
         blast_strength = obs['bomb_blast_strength']
         
         return blast_strength[y, x] > 0
-
-    # Check if the agent is in a tile that will be hit by a bomb
-    def _is_bomb_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
-        board = obs['board']
-        y, x = obs['position']
-        blast_strength = obs['bomb_blast_strength']
-        
-        bomb_coords = processed_board['bombs']
-
-        for bomb_y, bomb_x in bomb_coords:
-            if bomb_y == y and bomb_x == x:
-                return True
-            
-            bomb_strength = blast_strength[bomb_y, bomb_x]
-            
-            obstacle_mask = (board == constants.Item.Wood.value) | (board == constants.Item.Rigid.value)
-            
-            # Check if the bomb is in the same row or column as the player
-            # Checks if there is a wall between the bomb and the player
-            # Then checks if the bomb is strong enough to hit the player
-            if bomb_y == y and bomb_x != x:
-                min_x, max_x = min(x, bomb_x), max(x, bomb_x)
-                if not np.any(obstacle_mask[bomb_y, min_x + 1:max_x]):
-                    if (abs(bomb_x - x) < bomb_strength):
-                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
-                        return True
-            elif bomb_x == x and bomb_y != y:
-                min_y, max_y = min(y, bomb_y), max(y, bomb_y)
-                if not np.any(obstacle_mask[min_y + 1:max_y, bomb_x]):
-                    if (abs(bomb_y - y) < bomb_strength):
-                        # print(f"Bomb at ({bomb_x}, {bomb_y}) will hit agent at ({x}, {y})")
-                        return True
-                            
-        return False
     
     def _is_bomb_in_direction(self, obs: PommermanBoard, processed_board: ProcessedBoard, direction: Direction):
         y, x = obs['position']

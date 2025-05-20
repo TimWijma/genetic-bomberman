@@ -1,6 +1,6 @@
 import pommerman
 from pommerman import agents, constants
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 import numpy as np
 
 from genetic.common_types import AgentResult, GameResult, PommermanBoard
@@ -95,51 +95,59 @@ class Game:
     
     def _get_active_bombs(self, state) -> Dict[tuple, int]:
         board = state[0]['board']
-        bomb_map = state[0]['bomb_blast_strength']
-        bomb_positions = []
-        for y in range(board.shape[0]):
-            for x in range(board.shape[1]):
-                if bomb_map[y, x] > 0:    
-                    bomb_positions.append((y, x))
+        bomb_blast_strength_map = state[0]['bomb_blast_strength']
+
+        bomb_mask = (bomb_blast_strength_map > 0)
+        current_bombs = np.argwhere(bomb_mask)
+        current_bombs_set: Set[Tuple[int, int]] = set(map(tuple, current_bombs))
+
+        bomb_item_values = {
+            constants.Item.Agent0.value,
+            constants.Item.Agent1.value,
+            constants.Item.Agent2.value,
+            constants.Item.Agent3.value,
+            constants.Item.Bomb.value,
+            constants.Item.Flames.value,
+        }
+        agent_item_values = {
+            constants.Item.Agent0.value,
+            constants.Item.Agent1.value,
+            constants.Item.Agent2.value,
+            constants.Item.Agent3.value,
+        }
         
-        # Calculate bombs in active bombs that are no longer on the board
-        # and remove them from the active_bombs dictionary
+        rows, cols = board.shape
+        
         bombs_to_remove = []
         for bomb_pos in self.active_bombs.keys():
             y, x = bomb_pos
             
-            if board[y, x] not in [
-                constants.Item.Agent0.value,
-                constants.Item.Agent1.value,
-                constants.Item.Agent2.value,
-                constants.Item.Agent3.value,
-                constants.Item.Bomb.value,
-                constants.Item.Flames.value,
-            ]:
+            # Check if the bomb is still on the board
+            if not (0 <= y < rows and 0 <= x < cols):
                 bombs_to_remove.append(bomb_pos)
-                
+                continue
+            
+            # Check if the bomb is still a bomb or flames
+            if board[y, x] not in bomb_item_values:
+                bombs_to_remove.append(bomb_pos)
+
+        # Remove bombs that are no longer on the board
         for bomb_pos in bombs_to_remove:
             del self.active_bombs[bomb_pos]
-
-        # Add new bombs to the active_bombs dictionary
-        for bomb_pos in bomb_positions:
-            y, x = bomb_pos
-
+        
+        for bomb_pos in current_bombs_set:
             if bomb_pos not in self.active_bombs:
+                y, x = bomb_pos
                 board_value = board[y, x]
                 
-                if board_value in [
-                    constants.Item.Agent0.value,
-                    constants.Item.Agent1.value,
-                    constants.Item.Agent2.value,
-                    constants.Item.Agent3.value,
-                ]:
+                # Check if the bomb is owned by an agent
+                if board_value in agent_item_values:
                     # Board value of agents is 10, 11, 12, or 13
                     # Subtract 10 to get the agent ID
                     agent_id = board_value - 10
-                    self.active_bombs[bomb_pos] = agent_id
-
-        self.active_bombs = self.active_bombs
+                    self.active_bombs[bomb_pos] = agent_id  
+                    
+        return self.active_bombs
     
     def _get_wood_positions(self, state):
         self.bomb_wood = {}
@@ -152,6 +160,7 @@ class Game:
         y, x = bomb_pos
         blast_strength = int(state[0]['bomb_blast_strength'][y, x])
         wood_positions = []
+        rows, cols = board.shape
 
         # Check the four directions of the bomb
         for dy, dx in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
@@ -159,7 +168,7 @@ class Game:
                 new_y = y + dy * i
                 new_x = x + dx * i
 
-                if not self.position_in_bounds(state, (new_y, new_x)):
+                if not (0 <= new_y < rows and 0 <= new_x < cols):
                     break
 
                 # Check if the new position is a wood tile
