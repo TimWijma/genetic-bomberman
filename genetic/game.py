@@ -41,6 +41,11 @@ class Game:
             if self.custom_map is not None:
                 self._set_map(self.custom_map)
 
+            self.active_bombs = {}
+            self.bomb_wood = {}
+            self.kills = {}
+            self.wood_exploded = {}
+
             done = False
 
             while not done:

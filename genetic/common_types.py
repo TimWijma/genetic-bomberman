@@ -68,6 +68,7 @@ class GameResult:
                     "bombs_placed": agent_result.bombs_placed,
                     "individual_index": agent_result.individual_index,
                     "kills": agent_result.kills,
+                    "wood_exploded": agent_result.wood_exploded,
                 }
                 for agent_result in self.agent_results
             ],
