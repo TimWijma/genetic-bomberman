@@ -5,21 +5,21 @@ from pommerman.agents import PlayerAgent
 import pickle
 
 def main():
-    # custom_map = [
-    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
-    #     [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 0 starting area
-    #     [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
-    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
-    #     [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
-    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],  # Middle row
-    #     [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
-    #     [1, 0, 2, 0, 2, 0, 2, 0, 2, 0, 1],
-    #     [1, 0, 1, 2, 1, 2, 1, 2, 1, 0, 1],
-    #     [1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 1],  # Player 3 starting area
-    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
-    # ]
+    custom_map = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 0 starting area
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Middle row
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # Player 3 starting area
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
+    ]
     
-    with open('./genetic/results/70614/best_individual.pkl', 'rb') as f:
+    with open('./genetic/results/53186/best_individual.pkl', 'rb') as f:
         best_individual = pickle.load(f)
 
     game = Game([
@@ -27,7 +27,7 @@ def main():
         PlayerAgent(),
     ], 
         tournament_name="PommeFFACompetition-v0",
-        # custom_map=custom_map,
+        custom_map=custom_map,
     )
     print("Best Individual Rules:")
 

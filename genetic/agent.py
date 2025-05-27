@@ -24,6 +24,9 @@ class GeneticAgent(BaseAgent):
         self.visited_tiles = set()
         self.bombs_placed = 0
         self.total_distance = 0
+        
+        self.conditions = set(condition for rule in rules for condition in rule.conditions)
+        print(self.conditions)
     
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
@@ -93,23 +96,45 @@ class GeneticAgent(BaseAgent):
             bomb_conditions[ConditionType.IS_BOMB_UP] or \
             bomb_conditions[ConditionType.IS_BOMB_LEFT] or \
             bomb_conditions[ConditionType.IS_BOMB_RIGHT]
-
-        conditions = {
-            ConditionType.IS_BOMB_IN_RANGE: is_bomb_in_range,
-            ConditionType.IS_BOMB_UP: bomb_conditions[ConditionType.IS_BOMB_UP],
-            ConditionType.IS_BOMB_DOWN: bomb_conditions[ConditionType.IS_BOMB_DOWN],
-            ConditionType.IS_BOMB_LEFT: bomb_conditions[ConditionType.IS_BOMB_LEFT],
-            ConditionType.IS_BOMB_RIGHT: bomb_conditions[ConditionType.IS_BOMB_RIGHT],
-            ConditionType.IS_WOOD_IN_RANGE: self._is_wood_in_range(obs, processed_board),
-            ConditionType.CAN_MOVE_UP: self._can_move(obs, Direction.UP),
-            ConditionType.CAN_MOVE_DOWN: self._can_move(obs, Direction.DOWN),
-            ConditionType.CAN_MOVE_LEFT: self._can_move(obs, Direction.LEFT),
-            ConditionType.CAN_MOVE_RIGHT: self._can_move(obs, Direction.RIGHT),
-            ConditionType.IS_TRAPPED: self._is_trapped(obs),
-            ConditionType.HAS_BOMB: obs['ammo'] > 0,
-            ConditionType.IS_ENEMY_IN_RANGE: self._is_enemy_in_range(obs, processed_board),
-            ConditionType.IS_BOMB_ON_PLAYER: self._is_bomb_on_player(obs),
-        }
+        
+        conditions = {}
+        for condition in self.conditions:
+            if condition == ConditionType.IS_BOMB_IN_RANGE:
+                conditions[condition] = is_bomb_in_range
+            elif condition == ConditionType.IS_BOMB_UP:
+                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_UP]
+            elif condition == ConditionType.IS_BOMB_DOWN:
+                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_DOWN]
+            elif condition == ConditionType.IS_BOMB_LEFT:
+                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_LEFT]
+            elif condition == ConditionType.IS_BOMB_RIGHT:
+                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_RIGHT]
+            elif condition == ConditionType.IS_WOOD_IN_RANGE:
+                conditions[condition] = self._is_wood_in_range(obs, processed_board)
+            elif condition == ConditionType.CAN_MOVE_UP:
+                conditions[condition] = self._can_move(obs, Direction.UP)
+            elif condition == ConditionType.CAN_MOVE_DOWN:
+                conditions[condition] = self._can_move(obs, Direction.DOWN)
+            elif condition == ConditionType.CAN_MOVE_LEFT:
+                conditions[condition] = self._can_move(obs, Direction.LEFT)
+            elif condition == ConditionType.CAN_MOVE_RIGHT:
+                conditions[condition] = self._can_move(obs, Direction.RIGHT)
+            elif condition == ConditionType.IS_TRAPPED:
+                conditions[condition] = self._is_trapped(obs)
+            elif condition == ConditionType.HAS_BOMB:
+                conditions[condition] = obs['ammo'] > 0
+            elif condition == ConditionType.IS_ENEMY_IN_RANGE:
+                conditions[condition] = self._is_enemy_in_range(obs, processed_board)
+            elif condition == ConditionType.IS_BOMB_ON_PLAYER:
+                conditions[condition] = self._is_bomb_on_player(obs)
+            elif condition == ConditionType.IS_ENEMY_UP:
+                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.UP)
+            elif condition == ConditionType.IS_ENEMY_DOWN:
+                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.DOWN)
+            elif condition == ConditionType.IS_ENEMY_LEFT:
+                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.LEFT)
+            elif condition == ConditionType.IS_ENEMY_RIGHT:
+                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT)
 
         satisfied_rules = []
         for rule in self.rules:
@@ -127,22 +152,25 @@ class GeneticAgent(BaseAgent):
 
             # If there are multiple conditions, check if all of them are satisfied
             if len(rule.conditions) > 1:
-                result = conditions.get(rule.conditions[0], False)
-                
+                condition_values = [conditions.get(cond, False) for cond in rule.conditions]
+
+                i = 0
+                while i < len(rule.operators):
+                    if rule.operators[i] == OperatorType.AND:
+                        condition_values[i] = condition_values[i] and condition_values[i + 1]
+                        condition_values.pop(i + 1)
+                        rule.operators.pop(i)
+                    else:
+                        i += 1
+
+                result = condition_values[0]
                 for i in range(len(rule.operators)):
-                    # Break if there are no more conditions
-                    if i + 1 >= len(rule.conditions):
-                        break
-                    
-                    next_condition = conditions.get(rule.conditions[i + 1], False)
                     operator = rule.operators[i]
-                    if operator == OperatorType.AND:
-                        result = result and next_condition
-                    elif operator == OperatorType.OR:
-                        result = result or next_condition
+                    if operator == OperatorType.OR:
+                        result = result or condition_values[i + 1]
                     else:
                         raise ValueError(f"Unknown operator: {operator}")
-                    
+
                 if result:
                     satisfied_rules.append(rule)
                     continue
@@ -263,6 +291,44 @@ class GeneticAgent(BaseAgent):
                     return False
         
         return True
+    
+    def _is_enemy_in_direction(self, obs: PommermanBoard, processed_board: ProcessedBoard, direction: Direction):
+        y, x = obs['position']
+        board = obs['board']
+        rows, cols = board.shape
+        enemy_coords = processed_board['enemies']
+        
+        # Define the search range based on direction
+        if direction == Direction.UP:
+            # Check column x and adjacent columns (x-1, x+1)
+            columns_to_check = [col for col in [x-1, x, x+1] if 0 <= col < cols]
+            for enemy_y, enemy_x in enemy_coords:
+                if enemy_x in columns_to_check and enemy_y < y:
+                    return True
+                        
+        elif direction == Direction.DOWN:
+            # Check column x and adjacent columns (x-1, x+1)
+            columns_to_check = [col for col in [x-1, x, x+1] if 0 <= col < cols]
+            for enemy_y, enemy_x in enemy_coords:
+                if enemy_x in columns_to_check and enemy_y > y:
+                    return True
+                        
+        elif direction == Direction.LEFT:
+            # Check row y and adjacent rows (y-1, y+1)
+            rows_to_check = [row for row in [y-1, y, y+1] if 0 <= row < rows]
+            for enemy_y, enemy_x in enemy_coords:
+                if enemy_y in rows_to_check and enemy_x < x:
+                    return True
+                        
+        elif direction == Direction.RIGHT:
+            # Check row y and adjacent rows (y-1, y+1)
+            rows_to_check = [row for row in [y-1, y, y+1] if 0 <= row < rows]
+            for enemy_y, enemy_x in enemy_coords:
+                if enemy_y in rows_to_check and enemy_x > x:
+                    return True
+        
+        return False
+
     
     # Method that checks if there an an enemy within blast range in a given direction
     def _is_enemy_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):

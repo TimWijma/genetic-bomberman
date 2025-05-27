@@ -94,7 +94,6 @@ class Direction(Enum):
     DOWN = (0, 1)
     LEFT = (-1, 0)
 
-
 class ConditionType(Enum):
     IS_BOMB_IN_RANGE = 0,
     IS_BOMB_UP = 1,
@@ -110,6 +109,10 @@ class ConditionType(Enum):
     HAS_BOMB = 11,
     IS_ENEMY_IN_RANGE = 12,
     IS_BOMB_ON_PLAYER = 13,
+    IS_ENEMY_UP = 14,
+    IS_ENEMY_DOWN = 15,
+    IS_ENEMY_LEFT = 16,
+    IS_ENEMY_RIGHT = 17,
 
 class OperatorType(Enum):
     AND = 0,
