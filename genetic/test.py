@@ -23,16 +23,16 @@ def main():
     ]
 
     rules = [
-        # Rule(
-        #     conditions=[ConditionType.IS_WOOD_IN_RANGE],
-        #     operators=[],
-        #     action=ActionType.PLACE_BOMB
-        # ),
-        # Rule(
-        #     conditions=[ConditionType.IS_BOMB_IN_RANGE],
-        #     operators=[],
-        #     action=ActionType.MOVE_DOWN
-        # )
+        Rule(
+            conditions=[ConditionType.IS_WOOD_IN_RANGE],
+            operators=[],
+            action=ActionType.DO_NOTHING
+        ),
+        Rule(
+            conditions=[ConditionType.IS_ENEMY_DOWN],
+            operators=[],
+            action=ActionType.DO_NOTHING
+        )
     ]
 
     game = Game([

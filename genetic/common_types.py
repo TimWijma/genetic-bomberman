@@ -98,7 +98,7 @@ class Direction(Enum):
     LEFT = (-1, 0)
 
 class ConditionType(Enum):
-    IS_BOMB_IN_RANGE = 0,
+    # IS_BOMB_IN_RANGE = 0,
     IS_BOMB_UP = 1,
     IS_BOMB_DOWN = 2,
     IS_BOMB_LEFT = 3,

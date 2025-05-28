@@ -25,8 +25,6 @@ class GeneticAgent(BaseAgent):
         self.bombs_placed = 0
         self.total_distance = 0
 
-        self.conditions = set(condition for rule in rules for condition in rule.conditions)
-
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
         self.visited_tiles.add(obs['position'])
@@ -38,7 +36,7 @@ class GeneticAgent(BaseAgent):
         action = self.evaluate(obs, processed_board)
 
         if action is None:
-            return 0
+            return ActionType.DO_NOTHING
 
         if action == ActionType.PLACE_BOMB and obs['ammo'] > 0:
             self.bombs_placed += 1
@@ -84,99 +82,90 @@ class GeneticAgent(BaseAgent):
             'is_obstacle': is_obstacle,
         }
         
-    def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard):
-        bomb_conditions = {
-            ConditionType.IS_BOMB_UP: self._is_bomb_in_direction(obs, processed_board, Direction.UP),
-            ConditionType.IS_BOMB_DOWN: self._is_bomb_in_direction(obs, processed_board, Direction.DOWN),
-            ConditionType.IS_BOMB_LEFT: self._is_bomb_in_direction(obs, processed_board, Direction.LEFT),
-            ConditionType.IS_BOMB_RIGHT: self._is_bomb_in_direction(obs, processed_board, Direction.RIGHT),
-        }
-        is_bomb_in_range = bomb_conditions[ConditionType.IS_BOMB_DOWN] or \
-            bomb_conditions[ConditionType.IS_BOMB_UP] or \
-            bomb_conditions[ConditionType.IS_BOMB_LEFT] or \
-            bomb_conditions[ConditionType.IS_BOMB_RIGHT]
+    def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard) -> ActionType:
+        evaluated_conditions = {}
         
-        conditions = {}
-        for condition in self.conditions:
-            if condition == ConditionType.IS_BOMB_IN_RANGE:
-                conditions[condition] = is_bomb_in_range
-            elif condition == ConditionType.IS_BOMB_UP:
-                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_UP]
-            elif condition == ConditionType.IS_BOMB_DOWN:
-                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_DOWN]
-            elif condition == ConditionType.IS_BOMB_LEFT:
-                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_LEFT]
-            elif condition == ConditionType.IS_BOMB_RIGHT:
-                conditions[condition] = bomb_conditions[ConditionType.IS_BOMB_RIGHT]
-            elif condition == ConditionType.IS_WOOD_IN_RANGE:
-                conditions[condition] = self._is_wood_in_range(obs, processed_board)
-            elif condition == ConditionType.CAN_MOVE_UP:
-                conditions[condition] = self._can_move(obs, Direction.UP)
-            elif condition == ConditionType.CAN_MOVE_DOWN:
-                conditions[condition] = self._can_move(obs, Direction.DOWN)
-            elif condition == ConditionType.CAN_MOVE_LEFT:
-                conditions[condition] = self._can_move(obs, Direction.LEFT)
-            elif condition == ConditionType.CAN_MOVE_RIGHT:
-                conditions[condition] = self._can_move(obs, Direction.RIGHT)
-            elif condition == ConditionType.IS_TRAPPED:
-                conditions[condition] = self._is_trapped(obs)
-            elif condition == ConditionType.HAS_BOMB:
-                conditions[condition] = obs['ammo'] > 0
-            elif condition == ConditionType.IS_ENEMY_IN_RANGE:
-                conditions[condition] = self._is_enemy_in_range(obs, processed_board)
-            elif condition == ConditionType.IS_BOMB_ON_PLAYER:
-                conditions[condition] = self._is_bomb_on_player(obs)
-            elif condition == ConditionType.IS_ENEMY_UP:
-                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.UP)
-            elif condition == ConditionType.IS_ENEMY_DOWN:
-                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.DOWN)
-            elif condition == ConditionType.IS_ENEMY_LEFT:
-                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.LEFT)
-            elif condition == ConditionType.IS_ENEMY_RIGHT:
-                conditions[condition] = self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT)
-
-        satisfied_rules = []
+        # Iterate through the rules and evaluate conditions
+        # Return the action of the first rule that is satisfied
         for rule in self.rules:
-            if len(rule.conditions) == 0:
+            if not rule.conditions:
                 continue
-            
+
+            for condition in rule.conditions:
+                if condition not in evaluated_conditions:
+                    result = self.evaluate_condition(obs, processed_board, condition)
+                    evaluated_conditions[condition] = result
+
+            current_condition_values = [evaluated_conditions.get(cond, False) for cond in rule.conditions]
+
             # If there is 1 condition, check if it is satisfied 
             if len(rule.conditions) == 1:
-                result = conditions.get(rule.conditions[0], False)
-                
-                if result:
-                    satisfied_rules.append(rule)
-
-                continue
+                if current_condition_values[0]:
+                    return rule.action
 
             # If there are multiple conditions, check if all of them are satisfied
-            if len(rule.conditions) > 1:
-                condition_values = [conditions.get(cond, False) for cond in rule.conditions]
+            elif len(rule.conditions) > 1:
+                operators_for_evaluation = list(rule.operators)
 
                 i = 0
-                while i < len(rule.operators):
-                    if rule.operators[i] == OperatorType.AND:
-                        condition_values[i] = condition_values[i] and condition_values[i + 1]
-                        condition_values.pop(i + 1)
-                        rule.operators.pop(i)
+                while i < len(operators_for_evaluation):
+                    if operators_for_evaluation[i] == OperatorType.AND:
+                        current_condition_values[i] = current_condition_values[i] and current_condition_values[i + 1]
+                        
+                        current_condition_values.pop(i + 1)
+                        operators_for_evaluation.pop(i)
                     else:
                         i += 1
 
-                result = condition_values[0]
-                for i in range(len(rule.operators)):
-                    operator = rule.operators[i]
+                result = current_condition_values[0]
+                for i in range(len(operators_for_evaluation)):
+                    operator = operators_for_evaluation[i]
                     if operator == OperatorType.OR:
-                        result = result or condition_values[i + 1]
+                        result = result or current_condition_values[i + 1]
                     else:
                         raise ValueError(f"Unknown operator: {operator}")
 
                 if result:
-                    satisfied_rules.append(rule)
-                    continue
+                    return rule.action
 
-        if len(satisfied_rules) > 0:
-            rule = random.choice(satisfied_rules)
-            return rule.action
+        # If no rule is satisfied, return a default action
+        return ActionType.DO_NOTHING
+
+    def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition: ConditionType) -> bool:
+        if condition == ConditionType.IS_BOMB_UP:
+            return self._is_bomb_in_direction(obs, processed_board, Direction.UP)
+        elif condition == ConditionType.IS_BOMB_DOWN:
+            return self._is_bomb_in_direction(obs, processed_board, Direction.DOWN)
+        elif condition == ConditionType.IS_BOMB_LEFT:
+            return self._is_bomb_in_direction(obs, processed_board, Direction.LEFT)
+        elif condition == ConditionType.IS_BOMB_RIGHT:
+            return self._is_bomb_in_direction(obs, processed_board, Direction.RIGHT)
+        elif condition == ConditionType.IS_WOOD_IN_RANGE:
+            return self._is_wood_in_range(obs, processed_board)
+        elif condition == ConditionType.CAN_MOVE_UP:
+            return self._can_move(obs, Direction.UP)
+        elif condition == ConditionType.CAN_MOVE_DOWN:
+            return self._can_move(obs, Direction.DOWN)
+        elif condition == ConditionType.CAN_MOVE_LEFT:
+            return self._can_move(obs, Direction.LEFT)
+        elif condition == ConditionType.CAN_MOVE_RIGHT:
+            return self._can_move(obs, Direction.RIGHT)
+        elif condition == ConditionType.IS_TRAPPED:
+            return self._is_trapped(obs)
+        elif condition == ConditionType.HAS_BOMB:
+            return obs['ammo'] > 0
+        elif condition == ConditionType.IS_ENEMY_IN_RANGE:
+            return self._is_enemy_in_range(obs, processed_board)
+        elif condition == ConditionType.IS_BOMB_ON_PLAYER:
+            return self._is_bomb_on_player(obs)
+        elif condition == ConditionType.IS_ENEMY_UP:
+            return self._is_enemy_in_direction(obs, processed_board, Direction.UP)
+        elif condition == ConditionType.IS_ENEMY_DOWN:
+            return self._is_enemy_in_direction(obs, processed_board, Direction.DOWN)
+        elif condition == ConditionType.IS_ENEMY_LEFT:
+            return self._is_enemy_in_direction(obs, processed_board, Direction.LEFT)
+        elif condition == ConditionType.IS_ENEMY_RIGHT:
+            return self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT)
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
         board = obs['board']
