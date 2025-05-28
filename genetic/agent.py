@@ -24,10 +24,9 @@ class GeneticAgent(BaseAgent):
         self.visited_tiles = set()
         self.bombs_placed = 0
         self.total_distance = 0
-        
+
         self.conditions = set(condition for rule in rules for condition in rule.conditions)
-        print(self.conditions)
-    
+
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
         self.visited_tiles.add(obs['position'])

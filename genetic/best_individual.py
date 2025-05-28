@@ -19,15 +19,15 @@ def main():
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     ]
     
-    with open('./genetic/results/53186/best_individual.pkl', 'rb') as f:
+    with open('./genetic/results/12840/best_individual.pkl', 'rb') as f:
         best_individual = pickle.load(f)
 
     game = Game([
         GeneticAgent(rules=best_individual),
         PlayerAgent(),
-    ], 
+    ],
         tournament_name="PommeFFACompetition-v0",
-        custom_map=custom_map,
+        # custom_map=custom_map,
     )
     print("Best Individual Rules:")
 
