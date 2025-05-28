@@ -19,7 +19,7 @@ def main():
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     ]
     
-    with open('./genetic/results/12840/best_individual.pkl', 'rb') as f:
+    with open('./genetic/results/93102/best_individual.pkl', 'rb') as f:
         best_individual = pickle.load(f)
 
     game = Game([
@@ -30,6 +30,8 @@ def main():
         # custom_map=custom_map,
     )
     print("Best Individual Rules:")
+    for rule in best_individual:
+        print(rule)
 
     results = game.play_game(num_episodes=1, render_mode='human')
 
