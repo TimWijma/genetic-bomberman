@@ -80,14 +80,15 @@ class Game:
                     kills=self.kills.get(agent.agent_id, []),
                     wood_exploded=len(self.wood_exploded.get(agent.agent_id, [])),
                     average_distance=getattr(agent, 'average_distance', 0.0),
+                    is_alive=agent.is_alive,
                 ) for agent in self.agents
             ]
-
+            
             episode_result = GameResult(
                 agent_results=agent_results,
                 total_steps=self.env._step_count,
             )
-            
+
             results.append(episode_result)
 
         self.env.close()
