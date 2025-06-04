@@ -24,7 +24,8 @@ class Game:
 
         if custom_map is not None:
             self._set_map(custom_map)
-            self.env._max_steps = max_steps
+            
+        self.env._max_steps = max_steps
 
     def _set_map(self, custom_map: List[List[int]]):
         custom_map = np.array(custom_map, dtype=np.uint8)

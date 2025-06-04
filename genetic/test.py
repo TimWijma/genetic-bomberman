@@ -23,16 +23,6 @@ def main():
     ]
 
     rules = [
-        Rule(
-            conditions=[ConditionType.IS_WOOD_IN_RANGE],
-            operators=[],
-            action=ActionType.DO_NOTHING
-        ),
-        Rule(
-            conditions=[ConditionType.IS_ENEMY_DOWN],
-            operators=[],
-            action=ActionType.DO_NOTHING
-        )
     ]
 
     game = Game([
@@ -44,7 +34,6 @@ def main():
         # tournament_name="PommeFFACompetition-v0",
         tournament_name="PommeFFACompetition-v0",
         custom_map=custom_map,
-        max_steps=800
     )
 
     results = game.play_game(num_episodes=2, render_mode='human')
