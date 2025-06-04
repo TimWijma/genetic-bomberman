@@ -1,5 +1,9 @@
 {
     "[python]": {
         "editor.defaultFormatter": "ms-python.python"
+    },
+    "workbench.editorAssociations": {
+        "*.copilotmd": "vscode.markdown.preview.editor",
+        "file:/**/*.csv": "jupyter-data-wrangler"
     }
 }
