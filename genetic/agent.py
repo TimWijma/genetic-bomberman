@@ -132,6 +132,12 @@ class GeneticAgent(BaseAgent):
         return ActionType.DO_NOTHING
 
     def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition: ConditionType) -> bool:
+        print(f"Enemy in direction:")
+        print("Up", self._is_enemy_in_direction(obs, processed_board, Direction.UP))
+        print("Down", self._is_enemy_in_direction(obs, processed_board, Direction.DOWN))
+        print("Left", self._is_enemy_in_direction(obs, processed_board, Direction.LEFT))
+        print("Right", self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT))
+
         if condition == ConditionType.IS_BOMB_UP:
             return self._is_bomb_in_direction(obs, processed_board, Direction.UP)
         elif condition == ConditionType.IS_BOMB_DOWN:
@@ -282,41 +288,33 @@ class GeneticAgent(BaseAgent):
     
     def _is_enemy_in_direction(self, obs: PommermanBoard, processed_board: ProcessedBoard, direction: Direction):
         y, x = obs['position']
-        board = obs['board']
-        rows, cols = board.shape
         enemy_coords = processed_board['enemies']
-        
-        # Define the search range based on direction
-        if direction == Direction.UP:
-            # Check column x and adjacent columns (x-1, x+1)
-            columns_to_check = [col for col in [x-1, x, x+1] if 0 <= col < cols]
-            for enemy_y, enemy_x in enemy_coords:
-                if enemy_x in columns_to_check and enemy_y < y:
-                    return True
-                        
-        elif direction == Direction.DOWN:
-            # Check column x and adjacent columns (x-1, x+1)
-            columns_to_check = [col for col in [x-1, x, x+1] if 0 <= col < cols]
-            for enemy_y, enemy_x in enemy_coords:
-                if enemy_x in columns_to_check and enemy_y > y:
-                    return True
-                        
-        elif direction == Direction.LEFT:
-            # Check row y and adjacent rows (y-1, y+1)
-            rows_to_check = [row for row in [y-1, y, y+1] if 0 <= row < rows]
-            for enemy_y, enemy_x in enemy_coords:
-                if enemy_y in rows_to_check and enemy_x < x:
-                    return True
-                        
-        elif direction == Direction.RIGHT:
-            # Check row y and adjacent rows (y-1, y+1)
-            rows_to_check = [row for row in [y-1, y, y+1] if 0 <= row < rows]
-            for enemy_y, enemy_x in enemy_coords:
-                if enemy_y in rows_to_check and enemy_x > x:
-                    return True
-        
-        return False
+        is_obstacle = processed_board['is_obstacle']
 
+        # Check if there is a direct line of sight to an enemy in the specified direction
+        is_horizontal = (direction == Direction.LEFT or direction == Direction.RIGHT)
+        
+        for enemy_y, enemy_x in enemy_coords:
+            if (is_horizontal and enemy_y != y) or (not is_horizontal and enemy_x != x):
+                continue
+
+            # Check if the enemy is in the specified direction
+            if (direction == Direction.UP and enemy_y >= y) or \
+                (direction == Direction.DOWN and enemy_y <= y) or \
+                (direction == Direction.LEFT and enemy_x >= x) or \
+                (direction == Direction.RIGHT and enemy_x <= x):
+                continue
+
+            if is_horizontal:
+                min_x, max_x = min(x, enemy_x), max(x, enemy_x)
+                if not np.any(is_obstacle[y, min_x + 1:max_x]):
+                    return True
+            else:
+                min_y, max_y = min(y, enemy_y), max(y, enemy_y)
+                if not np.any(is_obstacle[min_y + 1:max_y, enemy_x]):
+                    return True
+
+        return False
     
     # Method that checks if there an an enemy within blast range in a given direction
     def _is_enemy_in_range(self, obs: PommermanBoard, processed_board: ProcessedBoard):
