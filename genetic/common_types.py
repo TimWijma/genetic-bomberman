@@ -116,6 +116,7 @@ class ConditionType(Enum):
     IS_ENEMY_DOWN = 15,
     IS_ENEMY_LEFT = 16,
     IS_ENEMY_RIGHT = 17,
+    IS_SAFE_TO_PLACE_BOMB = 18,
 
 class OperatorType(Enum):
     AND = 0,
