@@ -1,9 +1,10 @@
+import time
+
+from pommerman.agents.simple_agent import SimpleAgent
 from genetic.agent import GeneticAgent
 from genetic.common_types import Rule, ConditionType, OperatorType, ActionType
 from game import Game
 from pommerman.agents import PlayerAgent
-import pickle
-import os
 
 def main():
     '''Simple function to bootstrap a game.'''
@@ -26,21 +27,26 @@ def main():
     ]
 
     game = Game([
-        # GeneticAgent(rules),
-        # GeneticAgent(rules),
         GeneticAgent(rules),
-        PlayerAgent(),
+        GeneticAgent(rules),
+        SimpleAgent(),
+        SimpleAgent(),
+        # GeneticAgent(rules),
     ], 
-        # tournament_name="PommeFFACompetition-v0",
-        tournament_name="PommeFFACompetition-v0",
         custom_map=custom_map,
+        max_steps=400
     )
+    
+    start_time = time.time()
 
-    results = game.play_game(num_episodes=2, render_mode='human')
+    results = game.play_game(num_episodes=4, render_mode='human')
 
     print("Game Results:")
     for i, result in enumerate(results):
         print(f"Episode {i + 1}:")
         print(result)
+
+    print(f"Game played in {time.time() - start_time:.2f} seconds")
+    
 if __name__ == '__main__':
     main()

@@ -1,20 +1,36 @@
-import pommerman
 from pommerman import agents, constants
 from typing import Dict, List, Set, Tuple
 import numpy as np
+from pommerman.configs import ffa_competition_fast_env
+from pommerman.envs.v0 import Pomme
 
-from genetic.common_types import AgentResult, GameResult, PommermanBoard
+from genetic.common_types import AgentResult, GameResult
 
 
 class Game:
     def __init__(
             self,
             agent_list: List[agents.BaseAgent],
-            tournament_name: str = "PommeFFACompetition-v0",
             custom_map: List[List[int]] = None,
             max_steps: int = 200,
         ):
-        self.env = pommerman.make(tournament_name, agent_list)
+        config = ffa_competition_fast_env()
+        config["env_kwargs"]["max_steps"] = max_steps
+        config["env_kwargs"]["num_items"] = 0
+        # print(f"Using config: {config}")
+        self.env = Pomme(**config["env_kwargs"])
+        
+        configured_agents = []
+        for agent_id, agent_instance in enumerate(agent_list):
+            agent_instance.agent_id = agent_id
+
+            agent_instance._character = config["agent"](agent_id, config["game_type"])
+            
+            configured_agents.append(agent_instance)
+                        
+        self.env.set_agents(configured_agents)
+        self.env.set_init_game_state(None)
+        
         self.custom_map = custom_map
         self.agents = agent_list
         self.active_bombs = {}
@@ -25,8 +41,6 @@ class Game:
         if custom_map is not None:
             self._set_map(custom_map)
             
-        self.env._max_steps = max_steps
-
     def _set_map(self, custom_map: List[List[int]]):
         custom_map = np.array(custom_map, dtype=np.uint8)
         assert custom_map.shape == (11, 11), "Custom map must be of shape (11, 11)"
@@ -36,11 +50,11 @@ class Game:
     def play_game(self, num_episodes: int = 1, render_mode: str = None) -> List[GameResult]:
         results: List[GameResult] = []
         
-        for i_episode in range(num_episodes):
+        for _ in range(num_episodes):
             state = self.env.reset()
 
-            if self.custom_map is not None:
-                self._set_map(self.custom_map)
+            # if self.custom_map is not None:
+            #     self._set_map(self.custom_map)
 
             for agent in self.agents:
                 if hasattr(agent, 'reset_state'):
