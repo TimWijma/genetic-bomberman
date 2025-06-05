@@ -67,11 +67,12 @@ class GeneticAgent(BaseAgent):
         bomb_mask = (board_blast_strength > 0)
         bomb_positions = np.argwhere(bomb_mask)
 
-        # wood_positions = np.argwhere(board == constants.Item.Wood.value)
-
         is_rigid_mask = (board == constants.Item.Rigid.value)
         is_wood_mask = (board == constants.Item.Wood.value)
+        is_flame_mask = (board == constants.Item.Flames.value)
         is_obstacle = is_rigid_mask | is_wood_mask
+        is_bomb_mask = bomb_mask | is_flame_mask
+        is_obstacle_with_bombs = is_obstacle | is_bomb_mask
         
         return {
             'enemies': [tuple(pos) for pos in enemy_positions],
@@ -79,7 +80,10 @@ class GeneticAgent(BaseAgent):
             # 'wood': wood_positions,
             'is_rigid': is_rigid_mask,
             'is_wood': is_wood_mask,
+            'is_bomb': is_bomb_mask,
+            'is_flame': is_flame_mask,
             'is_obstacle': is_obstacle,
+            'is_obstacle_with_bombs': is_obstacle_with_bombs,
         }
         
     def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard) -> ActionType:
@@ -283,7 +287,7 @@ class GeneticAgent(BaseAgent):
     def _is_enemy_in_direction(self, obs: PommermanBoard, processed_board: ProcessedBoard, direction: Direction):
         y, x = obs['position']
         enemy_coords = processed_board['enemies']
-        is_obstacle = processed_board['is_obstacle']
+        is_obstacle_with_bombs = processed_board['is_obstacle_with_bombs']
 
         # Check if there is a direct line of sight to an enemy in the specified direction
         is_horizontal = (direction == Direction.LEFT or direction == Direction.RIGHT)
@@ -301,11 +305,11 @@ class GeneticAgent(BaseAgent):
 
             if is_horizontal:
                 min_x, max_x = min(x, enemy_x), max(x, enemy_x)
-                if not np.any(is_obstacle[y, min_x + 1:max_x]):
+                if not np.any(is_obstacle_with_bombs[y, min_x + 1:max_x]):
                     return True
             else:
                 min_y, max_y = min(y, enemy_y), max(y, enemy_y)
-                if not np.any(is_obstacle[min_y + 1:max_y, enemy_x]):
+                if not np.any(is_obstacle_with_bombs[min_y + 1:max_y, enemy_x]):
                     return True
 
         return False
@@ -317,17 +321,17 @@ class GeneticAgent(BaseAgent):
         player_blast_strength = obs['blast_strength']
         enemy_coords = processed_board['enemies']
 
-        is_obstacle = processed_board['is_obstacle']
+        is_obstacle_with_bombs = processed_board['is_obstacle_with_bombs']
 
         for enemy_y, enemy_x in enemy_coords:
             if enemy_y == y and enemy_x != x:
                 min_x, max_x = min(x, enemy_x), max(x, enemy_x)
-                if not np.any(is_obstacle[enemy_y, min_x + 1:max_x]):
+                if not np.any(is_obstacle_with_bombs[enemy_y, min_x + 1:max_x]):
                     if (abs(enemy_x - x) < player_blast_strength):
                         return True
             elif enemy_x == x and enemy_y != y:
                 min_y, max_y = min(y, enemy_y), max(y, enemy_y)
-                if not np.any(is_obstacle[min_y + 1:max_y, enemy_x]):
+                if not np.any(is_obstacle_with_bombs[min_y + 1:max_y, enemy_x]):
                     if (abs(enemy_y - y) < player_blast_strength):
                         return True
 
