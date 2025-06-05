@@ -84,7 +84,7 @@ class GeneticAgent(BaseAgent):
         
     def evaluate(self, obs: PommermanBoard, processed_board: ProcessedBoard) -> ActionType:
         evaluated_conditions = {}
-        
+
         # Iterate through the rules and evaluate conditions
         # Return the action of the first rule that is satisfied
         for rule in self.rules:
@@ -132,12 +132,6 @@ class GeneticAgent(BaseAgent):
         return ActionType.DO_NOTHING
 
     def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition: ConditionType) -> bool:
-        print(f"Enemy in direction:")
-        print("Up", self._is_enemy_in_direction(obs, processed_board, Direction.UP))
-        print("Down", self._is_enemy_in_direction(obs, processed_board, Direction.DOWN))
-        print("Left", self._is_enemy_in_direction(obs, processed_board, Direction.LEFT))
-        print("Right", self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT))
-
         if condition == ConditionType.IS_BOMB_UP:
             return self._is_bomb_in_direction(obs, processed_board, Direction.UP)
         elif condition == ConditionType.IS_BOMB_DOWN:
