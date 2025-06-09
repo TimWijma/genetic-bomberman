@@ -3,7 +3,7 @@ from typing import List, Set, Tuple, TypedDict
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
 from pommerman import characters, constants
-from genetic.common_types import ActionType, Direction, OperatorType, PommermanBoard, Rule, ConditionType
+from genetic.common_types import Condition, ActionType, Direction, OperatorType, PommermanBoard, Rule, ConditionType
 import numpy as np
 
 class ProcessedBoard(TypedDict):
@@ -96,11 +96,12 @@ class GeneticAgent(BaseAgent):
                 continue
 
             for condition in rule.conditions:
-                if condition not in evaluated_conditions:
+                condition_tuple = (condition.condition_type, condition.negation)
+                if condition_tuple not in evaluated_conditions:
                     result = self.evaluate_condition(obs, processed_board, condition)
-                    evaluated_conditions[condition] = result
+                    evaluated_conditions[condition_tuple] = result
 
-            current_condition_values = [evaluated_conditions.get(cond, False) for cond in rule.conditions]
+            current_condition_values = [evaluated_conditions[(cond.condition_type, cond.negation)] for cond in rule.conditions]
 
             # If there is 1 condition, check if it is satisfied 
             if len(rule.conditions) == 1:
@@ -135,41 +136,48 @@ class GeneticAgent(BaseAgent):
         # If no rule is satisfied, return a default action
         return ActionType.DO_NOTHING
 
-    def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition: ConditionType) -> bool:
-        if condition == ConditionType.IS_BOMB_UP:
-            return self._is_bomb_in_direction(obs, processed_board, Direction.UP)
-        elif condition == ConditionType.IS_BOMB_DOWN:
-            return self._is_bomb_in_direction(obs, processed_board, Direction.DOWN)
-        elif condition == ConditionType.IS_BOMB_LEFT:
-            return self._is_bomb_in_direction(obs, processed_board, Direction.LEFT)
-        elif condition == ConditionType.IS_BOMB_RIGHT:
-            return self._is_bomb_in_direction(obs, processed_board, Direction.RIGHT)
-        elif condition == ConditionType.IS_WOOD_IN_RANGE:
-            return self._is_wood_in_range(obs, processed_board)
-        elif condition == ConditionType.CAN_MOVE_UP:
-            return self._can_move(obs, Direction.UP)
-        elif condition == ConditionType.CAN_MOVE_DOWN:
-            return self._can_move(obs, Direction.DOWN)
-        elif condition == ConditionType.CAN_MOVE_LEFT:
-            return self._can_move(obs, Direction.LEFT)
-        elif condition == ConditionType.CAN_MOVE_RIGHT:
-            return self._can_move(obs, Direction.RIGHT)
-        elif condition == ConditionType.IS_TRAPPED:
-            return self._is_trapped(obs)
-        elif condition == ConditionType.HAS_BOMB:
-            return obs['ammo'] > 0
-        elif condition == ConditionType.IS_ENEMY_IN_RANGE:
-            return self._is_enemy_in_range(obs, processed_board)
-        elif condition == ConditionType.IS_BOMB_ON_PLAYER:
-            return self._is_bomb_on_player(obs)
-        elif condition == ConditionType.IS_ENEMY_UP:
-            return self._is_enemy_in_direction(obs, processed_board, Direction.UP)
-        elif condition == ConditionType.IS_ENEMY_DOWN:
-            return self._is_enemy_in_direction(obs, processed_board, Direction.DOWN)
-        elif condition == ConditionType.IS_ENEMY_LEFT:
-            return self._is_enemy_in_direction(obs, processed_board, Direction.LEFT)
-        elif condition == ConditionType.IS_ENEMY_RIGHT:
-            return self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT)
+    def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition: Condition) -> bool:
+        condition_type  = condition.condition_type
+        negation = condition.negation
+        if condition_type == ConditionType.IS_BOMB_UP:
+            result = self._is_bomb_in_direction(obs, processed_board, Direction.UP)
+        elif condition_type == ConditionType.IS_BOMB_DOWN:
+            result = self._is_bomb_in_direction(obs, processed_board, Direction.DOWN)
+        elif condition_type == ConditionType.IS_BOMB_LEFT:
+            result = self._is_bomb_in_direction(obs, processed_board, Direction.LEFT)
+        elif condition_type == ConditionType.IS_BOMB_RIGHT:
+            result = self._is_bomb_in_direction(obs, processed_board, Direction.RIGHT)
+        elif condition_type == ConditionType.IS_WOOD_IN_RANGE:
+            result = self._is_wood_in_range(obs, processed_board)
+        elif condition_type == ConditionType.CAN_MOVE_UP:
+            result = self._can_move(obs, Direction.UP)
+        elif condition_type == ConditionType.CAN_MOVE_DOWN:
+            result = self._can_move(obs, Direction.DOWN)
+        elif condition_type == ConditionType.CAN_MOVE_LEFT:
+            result = self._can_move(obs, Direction.LEFT)
+        elif condition_type == ConditionType.CAN_MOVE_RIGHT:
+            result = self._can_move(obs, Direction.RIGHT)
+        elif condition_type == ConditionType.IS_TRAPPED:
+            result = self._is_trapped(obs)
+        elif condition_type == ConditionType.HAS_BOMB:
+            result = obs['ammo'] > 0
+        elif condition_type == ConditionType.IS_ENEMY_IN_RANGE:
+            result = self._is_enemy_in_range(obs, processed_board)
+        elif condition_type == ConditionType.IS_BOMB_ON_PLAYER:
+            result = self._is_bomb_on_player(obs)
+        elif condition_type == ConditionType.IS_ENEMY_UP:
+            result = self._is_enemy_in_direction(obs, processed_board, Direction.UP)
+        elif condition_type == ConditionType.IS_ENEMY_DOWN:
+            result = self._is_enemy_in_direction(obs, processed_board, Direction.DOWN)
+        elif condition_type == ConditionType.IS_ENEMY_LEFT:
+            result = self._is_enemy_in_direction(obs, processed_board, Direction.LEFT)
+        elif condition_type == ConditionType.IS_ENEMY_RIGHT:
+            result = self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT)
+
+        if negation:
+            result = not result
+
+        return result
 
     def _can_move(self, obs: PommermanBoard, direction: Direction) -> bool:
         board = obs['board']
