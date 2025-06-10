@@ -98,7 +98,6 @@ class Direction(Enum):
     LEFT = (-1, 0)
 
 class ConditionType(Enum):
-    # IS_BOMB_IN_RANGE = 0,
     IS_BOMB_UP = 1,
     IS_BOMB_DOWN = 2,
     IS_BOMB_LEFT = 3,
@@ -116,7 +115,6 @@ class ConditionType(Enum):
     IS_ENEMY_DOWN = 15,
     IS_ENEMY_LEFT = 16,
     IS_ENEMY_RIGHT = 17,
-    # IS_SAFE_TO_PLACE_BOMB = 18,
 
 class Condition:
     def __init__(self, condition_type: ConditionType, negation: bool = False):
