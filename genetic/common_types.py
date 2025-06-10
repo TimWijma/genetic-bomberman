@@ -91,11 +91,19 @@ class GameResult:
             ],
         }
 
+# class Direction(Enum):
+#     UP = (0, -1)
+#     RIGHT = (1, 0)
+#     DOWN = (0, 1)
+#     LEFT = (-1, 0)
+
 class Direction(Enum):
-    UP = (0, -1)
-    RIGHT = (1, 0)
-    DOWN = (0, 1)
-    LEFT = (-1, 0)
+    STOP = 0
+    UP = 1
+    DOWN = 2
+    LEFT = 3
+    RIGHT = 4
+
 
 class ConditionType(Enum):
     # # IS_BOMB_IN_RANGE = 0,
@@ -174,7 +182,7 @@ class ActionType(Enum):
     MOVE_TOWARDS_ENEMY = 6
     MOVE_TOWARDS_WOOD = 7
     MOVE_TOWARDS_POWERUP = 8
-    MOFE_TO_SAFESPOT = 9
+    MOVE_TO_SAFE_SPOT = 9
 
 class Rule:
     def __init__(self, conditions: List[Condition], operators: List[OperatorType], action: ActionType):
