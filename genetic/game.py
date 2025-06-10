@@ -17,6 +17,9 @@ class Game:
         config = ffa_competition_fast_env()
         config["env_kwargs"]["max_steps"] = max_steps
         config["env_kwargs"]["num_items"] = 0
+        # config["env_kwargs"]["render_fps"] = 60
+        # config["env_kwargs"]["num_wood"] = 2
+
         # print(f"Using config: {config}")
         self.env = Pomme(**config["env_kwargs"])
         

@@ -26,10 +26,10 @@ def main():
     rules = [
         Rule(
             conditions=[
-                Condition(condition_type=ConditionType.IS_BOMB_UP, negation=True),
+                Condition(condition_type=ConditionType.DISTANCE_TO_ENEMY_LT, negation=False, value=4),
             ],
             operators=[],
-            action=ActionType.MOVE_UP
+            action=ActionType.MOVE_TOWARDS_ENEMY
         )
     ]
 
@@ -42,7 +42,7 @@ def main():
         PlayerAgent(),
     ], 
         custom_map=custom_map,
-        max_steps=400
+        max_steps=800
     )
     
     start_time = time.time()

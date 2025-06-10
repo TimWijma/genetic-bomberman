@@ -309,7 +309,7 @@ class GeneticAgent(BaseAgent):
         items = defaultdict(list)
         dist: Dict[Tuple[int, int], float] = {}
         prev: Dict[Tuple[int, int], Optional[Tuple[int, int]]] = {}
-        Q: queue.Queue = queue.Queue()
+        Q: queue.PriorityQueue = queue.PriorityQueue() # Changed to PriorityQueue
 
         my_x, my_y = my_position
         for r in range(max(0, my_x - depth), min(len(board), my_x + depth + 1)):
@@ -326,7 +326,7 @@ class GeneticAgent(BaseAgent):
                 items[item].append(position)
 
                 if position == my_position:
-                    Q.put(position)
+                    Q.put((0, position)) # (distance, position)
                     dist[position] = 0
                 else:
                     dist[position] = np.inf
@@ -337,24 +337,24 @@ class GeneticAgent(BaseAgent):
                 items[constants.Item.Bomb].append(my_position)
 
         while not Q.empty():
-            position = Q.get()
+            d, position = Q.get() # Get item with smallest distance
+
+            # If we've found a shorter path to this position already, skip
+            if d > dist[position]:
+                continue
 
             if utility.position_is_passable(board, position, enemies):
                 x, y = position
-                val = dist[(x, y)] + 1
                 for row_delta, col_delta in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                     new_position = (row_delta + x, col_delta + y)
                     if new_position not in dist:
                         continue
 
-                    if val < dist[new_position]:
-                        dist[new_position] = val
+                    new_dist = dist[position] + 1
+                    if new_dist < dist[new_position]:
+                        dist[new_position] = new_dist
                         prev[new_position] = position
-                        Q.put(new_position)
-                    elif (val == dist[new_position] and random.random() < .5):
-                        dist[new_position] = val
-                        prev[new_position] = position
-
+                        Q.put((new_dist, new_position)) # Add with new distance
 
         return items, dist, prev
 
@@ -397,14 +397,14 @@ class GeneticAgent(BaseAgent):
     def _find_safe_directions(self, board: np.ndarray, my_position: Tuple[int, int], unsafe_directions: defaultdict,
                               bombs: List[Dict[str, Any]], enemies: List[constants.Item]) -> List[constants.Action]:
         def is_stuck_direction(next_position: Tuple[int, int], bomb_range: int, next_board: np.ndarray, enemies: List[constants.Item]) -> bool:
-            Q: queue.PriorityQueue = queue.PriorityQueue()
+            Q: queue.PriorityQueue = queue.PriorityQueue() # Changed to PriorityQueue
             Q.put((0, next_position))
             seen = set()
 
             next_x, next_y = next_position
             is_stuck = True
             while not Q.empty():
-                dist, position = Q.get()
+                dist_q, position = Q.get() # Get item with smallest distance
                 seen.add(position)
 
                 position_x, position_y = position
@@ -412,7 +412,7 @@ class GeneticAgent(BaseAgent):
                     is_stuck = False
                     break
 
-                if dist > bomb_range:
+                if dist_q > bomb_range:
                     is_stuck = False
                     break
 
@@ -683,7 +683,6 @@ class GeneticAgent(BaseAgent):
                     min_dist = dist
             self.total_distance += min_dist
 
-    # NEW HELPER: Maps genetic.common_types.Direction to pommerman.constants.Action
     def _map_genetic_direction_to_pommerman_action(self, genetic_direction: Direction) -> constants.Action:
         if genetic_direction == Direction.UP:
             return constants.Action.Up
