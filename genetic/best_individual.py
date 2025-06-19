@@ -22,6 +22,8 @@ def main():
     with open('./genetic/results_keep/best_individual.pkl', 'rb') as f:
         best_individual = pickle.load(f)
 
+    print(best_individual)
+
     game = Game([
         GeneticAgent(rules=best_individual),
         PlayerAgent(),
@@ -33,7 +35,7 @@ def main():
     for rule in best_individual:
         print(rule)
 
-    results = game.play_game(num_episodes=10, render_mode='human')
+    results = game.play_game(num_episodes=1, render_mode='human')
 
     print("Game Results:")
     for i, result in enumerate(results):
