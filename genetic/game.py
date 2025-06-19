@@ -96,6 +96,7 @@ class Game:
                     wood_exploded=len(self.wood_exploded.get(agent.agent_id, [])),
                     average_distance=getattr(agent, 'average_distance', 0.0),
                     is_alive=agent.is_alive,
+                    no_satisfied_rules=getattr(agent, 'no_satisfied_rules', 0),
                 ) for agent in self.agents
             ]
             

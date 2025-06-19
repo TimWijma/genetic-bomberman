@@ -24,6 +24,7 @@ class GeneticAgent(BaseAgent):
         self.visited_tiles = set()
         self.bombs_placed = 0
         self.total_distance = 0
+        self.no_satisfied_rules = 0
 
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
@@ -49,6 +50,7 @@ class GeneticAgent(BaseAgent):
         self.bombs_placed = 0
         self.total_distance = 0
         self.average_distance = 0
+        self.no_satisfied_rules = 0
 
     def episode_end(self, reward):
         self.average_distance = self.total_distance / self.step_count if self.step_count > 0 else 0
@@ -133,7 +135,7 @@ class GeneticAgent(BaseAgent):
                 if result:
                     return rule.action
 
-        # If no rule is satisfied, return a default action
+        self.no_satisfied_rules += 1
         return ActionType.DO_NOTHING
 
     def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition: Condition) -> bool:

@@ -33,6 +33,7 @@ class AgentResult:
         wood_exploded: int,
         average_distance: float,
         is_alive: bool,
+        no_satisfied_rules: int,
     ):
         self.id = agent_id
         self.agent_type = agent_type
@@ -45,6 +46,7 @@ class AgentResult:
         self.wood_exploded = wood_exploded
         self.average_distance = average_distance
         self.is_alive = is_alive
+        self.no_satisfied_rules = no_satisfied_rules
         
     def __str__(self):
         return (f"Agent {self.id} ({self.agent_type}):\n"
@@ -55,7 +57,8 @@ class AgentResult:
                 f"  Kills:          {self.kills}\n"
                 f"  Wood Exploded:  {self.wood_exploded}\n"
                 f"  Average Distance: {self.average_distance}\n"
-                f"  Alive:          {self.is_alive}\n")
+                f"  Alive:          {self.is_alive}\n"
+                f"  Individual Index: {self.individual_index}\n")
 
     def __repr__(self):
         return self.__str__()
