@@ -21,14 +21,19 @@ class GeneticAgent(BaseAgent):
         self.rules = rules
         self.individual_index = individual_index
         self.step_count = 0
-        self.visited_tiles = set()
+        self.visited_tiles = {}  # Changed to dictionary to track visit counts
         self.bombs_placed = 0
         self.total_distance = 0
         self.no_satisfied_rules = 0
 
     def act(self, obs: PommermanBoard, action_space: Discrete):
         self.step_count += 1
-        self.visited_tiles.add(obs['position'])
+        position = obs['position']
+        # Track visit count for each tile
+        if position in self.visited_tiles:
+            self.visited_tiles[position] += 1
+        else:
+            self.visited_tiles[position] = 1
 
         processed_board = self.process_board(obs)
 
@@ -46,7 +51,7 @@ class GeneticAgent(BaseAgent):
 
     def reset_state(self):
         self.step_count = 0
-        self.visited_tiles = set()
+        self.visited_tiles = {}  # Reset to empty dictionary
         self.bombs_placed = 0
         self.total_distance = 0
         self.average_distance = 0

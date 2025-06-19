@@ -89,7 +89,7 @@ class Game:
                     agent_type=type(agent).__name__,
                     winner=agent.agent_id in winners,
                     step_count=getattr(agent, 'step_count', 0),
-                    visited_tiles=len(getattr(agent, 'visited_tiles', set())),
+                    visited_tiles=getattr(agent, 'visited_tiles', {}),
                     bombs_placed=getattr(agent, 'bombs_placed', 0),
                     individual_index=getattr(agent, 'individual_index', -1),
                     kills=self.kills.get(agent.agent_id, []),

@@ -19,21 +19,21 @@ def main():
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # Border walls
     ]
     
-    with open('./genetic/results/93102/best_individual.pkl', 'rb') as f:
+    with open('./genetic/results_keep/best_individual.pkl', 'rb') as f:
         best_individual = pickle.load(f)
 
     game = Game([
         GeneticAgent(rules=best_individual),
         PlayerAgent(),
     ],
-        tournament_name="PommeFFACompetition-v0",
+        # tournament_name="PommeFFACompetition-v0",
         # custom_map=custom_map,
     )
     print("Best Individual Rules:")
     for rule in best_individual:
         print(rule)
 
-    results = game.play_game(num_episodes=1, render_mode='human')
+    results = game.play_game(num_episodes=10, render_mode='human')
 
     print("Game Results:")
     for i, result in enumerate(results):

@@ -26,7 +26,7 @@ class AgentResult:
         agent_type, 
         winner: bool, 
         step_count: int, 
-        visited_tiles: int, 
+        visited_tiles: Dict[Tuple[int, int], int],
         bombs_placed: int, 
         individual_index: int, 
         kills: List[int], 
