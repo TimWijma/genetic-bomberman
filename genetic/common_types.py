@@ -147,6 +147,7 @@ class Rule:
         self.conditions = conditions
         self.operators = operators
         self.action = action
+        self.times_executed = 0
         
     def __str__(self):
         parts = []
@@ -156,7 +157,7 @@ class Rule:
                 cond_str += f" {self.operators[i].name}"
             parts.append(cond_str)
         conditions_str = " ".join(parts)
-        return f"IF {conditions_str} THEN {self.action.name}"
+        return f"IF {conditions_str} THEN {self.action.name} (Executed: {self.times_executed})"
 
     def __repr__(self):
         return self.__str__()

@@ -138,6 +138,7 @@ class GeneticAgent(BaseAgent):
                         raise ValueError(f"Unknown operator: {operator}")
 
                 if result:
+                    rule.times_executed += 1
                     return rule.action
 
         self.no_satisfied_rules += 1
