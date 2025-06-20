@@ -119,17 +119,6 @@ class ConditionType(Enum):
     IS_ENEMY_LEFT = 16,
     IS_ENEMY_RIGHT = 17,
 
-class Condition:
-    def __init__(self, condition_type: ConditionType, negation: bool = False):
-        self.condition_type = condition_type
-        self.negation = negation
-
-    def __str__(self):
-        return f"{self.condition_type.name} {self.value if self.value is not None else ''}".strip()
-
-    def __repr__(self):
-        return self.__str__()
-
 class OperatorType(Enum):
     AND = 0,
     OR = 1,
@@ -143,7 +132,7 @@ class ActionType(Enum):
     PLACE_BOMB = 5
 
 class Rule:
-    def __init__(self, conditions: List[Condition], operators: List[OperatorType], action: ActionType):
+    def __init__(self, conditions: List[ConditionType], operators: List[OperatorType], action: ActionType):
         self.conditions = conditions
         self.operators = operators
         self.action = action
@@ -151,7 +140,7 @@ class Rule:
     def __str__(self):
         parts = []
         for i, cond in enumerate(self.conditions):
-            cond_str = f"{'NOT ' if cond.negation else ''}{cond.condition_type.name}"
+            cond_str = cond.name
             if i < len(self.operators):
                 cond_str += f" {self.operators[i].name}"
             parts.append(cond_str)

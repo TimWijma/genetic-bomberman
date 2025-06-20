@@ -2,7 +2,7 @@ import time
 
 from pommerman.agents.simple_agent import SimpleAgent
 from genetic.agent import GeneticAgent
-from genetic.common_types import Rule, Condition, ConditionType, OperatorType, ActionType
+from genetic.common_types import Rule, ConditionType, OperatorType, ActionType
 from game import Game
 from pommerman.agents import PlayerAgent
 
@@ -26,7 +26,7 @@ def main():
     rules = [
         Rule(
             conditions=[
-                Condition(condition_type=ConditionType.IS_BOMB_UP, negation=True),
+                ConditionType.IS_BOMB_UP,
             ],
             operators=[],
             action=ActionType.MOVE_UP

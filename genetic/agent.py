@@ -1,9 +1,8 @@
-import random
-from typing import List, Set, Tuple, TypedDict
+from typing import List, Tuple, TypedDict
 from pommerman.agents.base_agent import BaseAgent
 from gym.spaces import Discrete
 from pommerman import characters, constants
-from genetic.common_types import Condition, ActionType, Direction, OperatorType, PommermanBoard, Rule, ConditionType
+from genetic.common_types import ActionType, Direction, OperatorType, PommermanBoard, Rule, ConditionType
 import numpy as np
 
 class ProcessedBoard(TypedDict):
@@ -103,12 +102,11 @@ class GeneticAgent(BaseAgent):
                 continue
 
             for condition in rule.conditions:
-                condition_tuple = (condition.condition_type, condition.negation)
-                if condition_tuple not in evaluated_conditions:
+                if condition not in evaluated_conditions:
                     result = self.evaluate_condition(obs, processed_board, condition)
-                    evaluated_conditions[condition_tuple] = result
+                    evaluated_conditions[condition] = result
 
-            current_condition_values = [evaluated_conditions[(cond.condition_type, cond.negation)] for cond in rule.conditions]
+            current_condition_values = [evaluated_conditions[cond] for cond in rule.conditions]
 
             # If there is 1 condition, check if it is satisfied 
             if len(rule.conditions) == 1:
@@ -143,9 +141,7 @@ class GeneticAgent(BaseAgent):
         self.no_satisfied_rules += 1
         return ActionType.DO_NOTHING
 
-    def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition: Condition) -> bool:
-        condition_type  = condition.condition_type
-        negation = condition.negation
+    def evaluate_condition(self, obs: PommermanBoard, processed_board: ProcessedBoard, condition_type: ConditionType) -> bool:
         if condition_type == ConditionType.IS_BOMB_UP:
             result = self._is_bomb_in_direction(obs, processed_board, Direction.UP)
         elif condition_type == ConditionType.IS_BOMB_DOWN:
@@ -180,9 +176,6 @@ class GeneticAgent(BaseAgent):
             result = self._is_enemy_in_direction(obs, processed_board, Direction.LEFT)
         elif condition_type == ConditionType.IS_ENEMY_RIGHT:
             result = self._is_enemy_in_direction(obs, processed_board, Direction.RIGHT)
-
-        if negation:
-            result = not result
 
         return result
 
